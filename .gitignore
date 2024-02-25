@@ -1,1 +1,5 @@
 *.out
+
+l1/*.txt
+
+.vscode
