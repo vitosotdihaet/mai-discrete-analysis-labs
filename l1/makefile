@@ -3,7 +3,7 @@ CFLAGS = -Wall -Wextra -ggdb
 TEST_NUMBERS = $(ls *.txt | wc -l)
 
 
-main.out: string.h main.c
+main.out: main.c
 	$(CC) -o main.out $(CFLAGS) main.c -lm
 
 test: main.out
