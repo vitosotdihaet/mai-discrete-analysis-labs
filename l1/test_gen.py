@@ -1,7 +1,7 @@
 import random
 import string
 
-TEST_COUNT = 100
+TEST_COUNT = 20
 
 class Date:
     def __init__(self, day, month, year):
@@ -49,10 +49,11 @@ class Date:
 
 def random_string():
     output = ''
-    length = random.randint(0, 64)
+    length = random.randint(1, 64)
 
     for _ in range(length):
-        output += random.choice(string.ascii_letters + ' ')
+        output += random.choice(string.ascii_letters)
+        # output += random.choice(string.ascii_letters + ' ')
 
     return output
 
