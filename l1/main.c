@@ -179,69 +179,69 @@ int string_at(string s, uint32_t i) {
 }
 
 
-const int initial_byte_mask = 0xFF;
+const uint64_t initial_byte_mask = 0xFF;
 
 uint64_t pair_count = 0;
 uint64_t current_capacity = 2;
 
 
 typedef struct {
-    int key; // key = year * 10000 + month * 100 + day, max key is 99991231 ()
+    uint64_t key; // key = year * 10000 + month * 100 + day, max key is 99991231 ()
     string input_key;
     string value;
 } key_value_pair;
 
 
+void counting_sort(key_value_pair **pairs, uint64_t binary_shift) {
+    uint64_t byte_mask = initial_byte_mask << binary_shift;
+
+    uint64_t *sorting_array = calloc(initial_byte_mask + 1, sizeof(uint64_t));
+    key_value_pair *output_array = calloc(current_capacity, sizeof(key_value_pair));
+
+    for (uint64_t pair_index = 0; pair_index < pair_count; ++pair_index) {
+        int byte = ((*pairs)[pair_index].key & byte_mask) >> binary_shift;
+        ++sorting_array[byte];
+    }
+
+    for (int byte = 1; byte <= initial_byte_mask; ++byte) sorting_array[byte] += sorting_array[byte - 1];
+
+    for (uint64_t pair_index = pair_count; pair_index > 0; --pair_index) {
+        int byte = ((*pairs)[pair_index - 1].key & byte_mask) >> binary_shift;
+        --sorting_array[byte];
+        output_array[sorting_array[byte]] = (*pairs)[pair_index - 1];
+
+        // if ((*pairs)[pair_index - 1].input_key.values == NULL)
+        // printf("- %"PRIu64", sorting_array[%d] = %"PRIu64", pairs[%"PRIu64"].input_key = %s\n",
+        //     pair_index - 1, byte, sorting_array[byte], pair_index - 1, (*pairs)[pair_index - 1].input_key.values
+        // );
+        
+        // if (output_array[sorting_array[byte]].input_key.values == NULL) 
+        //     printf("YOU FUCKING NULLED!!!\n");
+    }
+
+    // for (uint64_t i = 0; i < pair_count; ++i) {
+    //     if (output_array[i].input_key.values == NULL)
+    //     printf("i = %"PRIu64"\n", i);
+    // }
+
+    key_value_pair *previous_pairs = *pairs;
+    *pairs = output_array;
+
+    free(previous_pairs);
+    free(sorting_array);
+}
+
 void radix_sort(key_value_pair **pairs) {
-    for (uint64_t byte_shift = 0; byte_shift < sizeof(unsigned); ++byte_shift) {
-        uint64_t *sorting_array = calloc(initial_byte_mask + 1, sizeof(uint64_t));
+    for (uint64_t byte_shift = 0; byte_shift < sizeof(uint64_t); ++byte_shift) {
         uint64_t binary_shift = byte_shift * ceil(log2(initial_byte_mask));
-        key_value_pair *output_array = calloc(current_capacity, sizeof(key_value_pair));
-
-        unsigned byte_mask = initial_byte_mask << binary_shift;
-
-        // printf("%"PRIu64" bin shift => byte_mask is 0x%x\n", binary_shift, byte_mask);
-
-        for (uint64_t pair_index = 0; pair_index < pair_count; ++pair_index) {
-            int byte = ((*pairs)[pair_index].key & byte_mask) >> binary_shift;
-            ++sorting_array[byte];
-            // if ((*pairs)[pair_index].input_key.values == NULL)
-            // printf("+ %"PRIu64", sorting_array[%d] = %"PRIu64"\n", pair_index, byte, sorting_array[byte]);
-        }
-
-        for (int byte = 1; byte <= initial_byte_mask; ++byte) sorting_array[byte] += sorting_array[byte - 1];
-
-        for (uint64_t pair_index = pair_count; pair_index > 0; --pair_index) {
-            int byte = ((*pairs)[pair_index - 1].key & byte_mask) >> binary_shift;
-            --sorting_array[byte];
-            output_array[sorting_array[byte]] = (*pairs)[pair_index - 1];
-
-            // if ((*pairs)[pair_index - 1].input_key.values == NULL)
-            // printf("- %"PRIu64", sorting_array[%d] = %"PRIu64", pairs[%"PRIu64"].input_key = %s\n",
-            //     pair_index - 1, byte, sorting_array[byte], pair_index - 1, (*pairs)[pair_index - 1].input_key.values
-            // );
-            
-            // if (output_array[sorting_array[byte]].input_key.values == NULL) 
-            //     printf("YOU FUCKING NULLED!!!\n");
-        }
-
-        // for (uint64_t i = 0; i < pair_count; ++i) {
-        //     if (output_array[i].input_key.values == NULL)
-        //     printf("i = %"PRIu64"\n", i);
-        // }
-
-        key_value_pair *previous_pairs = *pairs;
-        *pairs = output_array;
-
-        free(previous_pairs);
-        free(sorting_array);
+        counting_sort(pairs, binary_shift);
     }
 }
 
 int main() {
     key_value_pair *pairs = calloc(current_capacity, sizeof(key_value_pair));
 
-    unsigned int year = 0, month = 0, day = 0;
+    uint64_t year = 0, month = 0, day = 0;
 
     string value;
     string input_key;
@@ -257,17 +257,17 @@ int main() {
             else exit(1);
         }
 
-        sscanf(input_key.values, "%d.%d.%d ", &day, &month, &year);
+        sscanf(input_key.values, "%"PRIu64".%"PRIu64".%"PRIu64" ", &day, &month, &year);
         string_read(&value, stdin);
 
-        pairs[pair_count].key = year * 10000 + month * 100 + day;
+        pairs[pair_count].key = year * 1000000000000 + month * 1000000 + day;
         string_init(&pairs[pair_count].input_key);
         string_set(&pairs[pair_count].input_key, input_key);
         string_init(&pairs[pair_count].value);
         string_set(&pairs[pair_count].value, value);
 
-        // printf("READ: %d.%d.%d\t%s\n", day, month, year, value.values);
-        // printf("input_key: %s, key: %d\n",
+        // printf("READ: %"PRIu64".%"PRIu64".%"PRIu64"\t%s\n", day, month, year, value.values);
+        // printf("input_key: %s, key: %"PRIu64"\n",
         //     pairs[pair_count].input_key.values,
         //     pairs[pair_count].key,
         //     pairs[pair_count].value.values
