@@ -9,19 +9,22 @@ class Date:
         self.month = month
         self.year = year
 
-        if day < 10 and random.random() > 0.5:
-            day = '0' + str(day)
-        if month < 10 and random.random() > 0.5:
-            month = '0' + str(month)
-        year = '0' * random.randint(0, 5) + str(year)
+        # if day < 10 and random.random() > 0.5:
+        #     day = '0' + str(day)
+        # if month < 10 and random.random() > 0.5:
+        #     month = '0' + str(month)
+        # year = '0' * random.randint(0, 5) + str(year)
 
         self.string = f'{day}.{month}.{year}'
 
     @staticmethod
     def random():
-        year = random.randint(0, 999999)
-        month = random.randint(0, 999999)
-        day = random.randint(0, 999999)
+        # year = random.randint(0, 999999)
+        # month = random.randint(0, 999999)
+        # day = random.randint(0, 999999)
+        year = random.randint(0, 9999)
+        month = random.randint(0, 12)
+        day = random.randint(0, 31)
         return Date(day, month, year)
     
     def __lt__(self, other):

@@ -198,31 +198,21 @@ void counting_sort(key_value_pair **pairs, uint64_t binary_shift) {
     uint64_t *sorting_array = calloc(initial_byte_mask + 1, sizeof(uint64_t));
     key_value_pair *output_array = calloc(current_capacity, sizeof(key_value_pair));
 
+    // count
     for (uint64_t pair_index = 0; pair_index < pair_count; ++pair_index) {
         int byte = ((*pairs)[pair_index].key & byte_mask) >> binary_shift;
         ++sorting_array[byte];
     }
 
+    // prefix sum
     for (int byte = 1; byte <= initial_byte_mask; ++byte) sorting_array[byte] += sorting_array[byte - 1];
 
+    // retrieve positions
     for (uint64_t pair_index = pair_count; pair_index > 0; --pair_index) {
         int byte = ((*pairs)[pair_index - 1].key & byte_mask) >> binary_shift;
         --sorting_array[byte];
         output_array[sorting_array[byte]] = (*pairs)[pair_index - 1];
-
-        // if ((*pairs)[pair_index - 1].input_key.values == NULL)
-        // printf("- %"PRIu64", sorting_array[%d] = %"PRIu64", pairs[%"PRIu64"].input_key = %s\n",
-        //     pair_index - 1, byte, sorting_array[byte], pair_index - 1, (*pairs)[pair_index - 1].input_key.values
-        // );
-        
-        // if (output_array[sorting_array[byte]].input_key.values == NULL) 
-        //     printf("YOU FUCKING NULLED!!!\n");
     }
-
-    // for (uint64_t i = 0; i < pair_count; ++i) {
-    //     if (output_array[i].input_key.values == NULL)
-    //     printf("i = %"PRIu64"\n", i);
-    // }
 
     key_value_pair *previous_pairs = *pairs;
     *pairs = output_array;
@@ -257,10 +247,11 @@ int main() {
             else exit(1);
         }
 
-        sscanf(input_key.values, "%"PRIu64".%"PRIu64".%"PRIu64" ", &day, &month, &year);
+        sscanf(input_key.values, "%"PRIu64".%"PRIu64".%"PRIu64, &day, &month, &year);
         string_read(&value, stdin);
 
-        pairs[pair_count].key = year * 1000000000000 + month * 1000000 + day;
+        // pairs[pair_count].key = year * 1000000000000 + month * 1000000 + day;
+        pairs[pair_count].key = year * 10000 + month * 100 + day;
         string_init(&pairs[pair_count].input_key);
         string_set(&pairs[pair_count].input_key, input_key);
         string_init(&pairs[pair_count].value);
@@ -277,9 +268,6 @@ int main() {
         if (feof(stdin)) break;
     }
 
-    string_free(value);
-    string_free(input_key);
-
     // printf("COUNT: %"PRIu64"\n", pair_count);
 
     radix_sort(&pairs);
@@ -289,6 +277,9 @@ int main() {
         string_free(pairs[i].input_key);
         string_free(pairs[i].value);
     }
+
+    string_free(value);
+    string_free(input_key);
 
     free(pairs);
 
