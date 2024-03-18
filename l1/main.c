@@ -40,8 +40,12 @@ typedef struct {
 const uint64_t initial_byte_mask = 0xFF;
 
 void counting_sort(key_value_pairs *pairs, unsigned binary_shift) {
-    uint64_t *sorting_array = calloc(initial_byte_mask + 1, sizeof(uint64_t));
-    key_value_pair *output_array = calloc(pairs->capacity, sizeof(key_value_pair));
+    uint64_t *sorting_array = (uint64_t*) calloc(initial_byte_mask + 1, sizeof(uint64_t));
+    key_value_pairs output_array = (key_value_pairs) {
+        .data = (key_value_pair*) calloc(pairs->capacity, sizeof(key_value_pair)),
+        .count = 0,
+        .capacity = 2
+    };
 
     uint64_t byte_mask = initial_byte_mask << binary_shift;
 
@@ -54,11 +58,11 @@ void counting_sort(key_value_pairs *pairs, unsigned binary_shift) {
     for (uint64_t pair_index = pairs->count; pair_index > 0; --pair_index) {
         int byte = (pairs->data[pair_index - 1].key & byte_mask) >> binary_shift;
         --sorting_array[byte];
-        output_array[sorting_array[byte]] = pairs->data[pair_index - 1];
+        output_array.data[sorting_array[byte]] = pairs->data[pair_index - 1];
     }
 
     key_value_pair *previous_pairs = pairs->data;
-    pairs->data = output_array;
+    pairs->data = output_array.data;
 
     free(previous_pairs);
     free(sorting_array);
@@ -74,9 +78,9 @@ void radix_sort(key_value_pairs *pairs) {
 
 int main() {
     key_value_pairs pairs = (key_value_pairs) {
-        .data = calloc(2, sizeof(key_value_pair)),
-        .capacity = 2,
-        .count = 0
+        .data = (key_value_pair*) calloc(2, sizeof(key_value_pair)),
+        .count = 0,
+        .capacity = 2
     };
 
     uint64_t year = 0, month = 0, day = 0;
