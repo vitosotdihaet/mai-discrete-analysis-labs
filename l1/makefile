@@ -1,10 +1,14 @@
 CC = gcc
+CPPC = g++
 CFLAGS = -Wall -Wextra -ggdb
 TEST_NUMBERS = $(ls *.txt | wc -l)
 
 
 main.out: main.c
 	$(CC) -o main.out $(CFLAGS) main.c -lm
+
+compare: compare.cpp
+	$(CPPC) -o compare.out $(CFLAGS) compare.cpp -lm
 
 test: main.out
 	@find . -name 'ti*.txt' | sort | while read -r test; do \

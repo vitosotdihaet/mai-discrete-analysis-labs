@@ -1,7 +1,7 @@
 import random
 import string
 
-TEST_COUNT = 20
+TEST_COUNT = 1
 
 class Date:
     def __init__(self, day, month, year):
@@ -9,19 +9,10 @@ class Date:
         self.month = month
         self.year = year
 
-        # if day < 10 and random.random() > 0.5:
-        #     day = '0' + str(day)
-        # if month < 10 and random.random() > 0.5:
-        #     month = '0' + str(month)
-        # year = '0' * random.randint(0, 5) + str(year)
-
         self.string = f'{day}.{month}.{year}'
 
     @staticmethod
     def random():
-        # year = random.randint(0, 999999)
-        # month = random.randint(0, 999999)
-        # day = random.randint(0, 999999)
         year = random.randint(0, 9999)
         month = random.randint(0, 12)
         day = random.randint(0, 31)
@@ -53,14 +44,13 @@ def random_string():
 
     for _ in range(length):
         output += random.choice(string.ascii_letters)
-        # output += random.choice(string.ascii_letters + ' ')
 
     return output
 
 
 
 for i in range(TEST_COUNT):
-    count = random.randint(50, 10000)
+    count = random.randint(50, 1000000)
     key_value = []
 
     for j in range(count):
