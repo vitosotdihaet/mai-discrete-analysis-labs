@@ -1,6 +1,8 @@
 *.out
 
 l1/*.txt
+l2/*.avl
+l2/*.txt
 
 .vscode
 vgcore.*
