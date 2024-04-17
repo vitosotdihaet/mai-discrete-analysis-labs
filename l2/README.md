@@ -16,3 +16,4 @@ $\mathrm{Find}(x) \rightarrow \Gamma_i: x \in x_i$
 
 $\mathrm{Parent}(x) = x \Rightarrow x = \Gamma_i \in x_i$
 
+[AVL tree visualization](https://www.cs.usfca.edu/~galles/visualization/AVLtree.html)
