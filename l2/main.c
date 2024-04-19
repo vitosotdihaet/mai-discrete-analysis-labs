@@ -329,7 +329,7 @@ void _avl_save_to_path(node *current, FILE *file) {
     if (current == NULL) return;
 
     _avl_save_to_path(current->left, file);
-    fprintf(file, "%s %"PRIu64"\n", current->value.key, current->value.value);
+    fprintf(file, "k: %s v: %"PRIu64"\n", current->value.key, current->value.value);
     _avl_save_to_path(current->right, file);
 }
 
@@ -353,10 +353,13 @@ avl* avl_load_from_path(const char *path) {
     }
 
     char key[KEY_LEN];
+    char line[COMMAND_BUFFER_LENGTH];
     uint64_t value;
 
     avl *tree = avl_new();
-    while (fscanf(file, "%s %"PRIu64, key, &value) != EOF) {
+    while (fgets(line, COMMAND_BUFFER_LENGTH, file) != NULL) {
+        if (line[0] != 'k') return NULL;
+        sscanf(line, "k: %s v: %"PRIu64, key, &value);
         avl_insert(tree, key_value_new(key, value));
     }
 
