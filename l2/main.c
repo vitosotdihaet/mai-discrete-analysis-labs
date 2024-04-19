@@ -335,9 +335,9 @@ void _avl_save_to_path(node *current, FILE *file) {
 
 int avl_save_to_path(avl tree, const char *path) {
     FILE *file = fopen(path, "w");
-    // if (file == NULL) {
-    //     return error;
-    // }
+    if (file == NULL) {
+        return avl_result_error;
+    }
 
     _avl_save_to_path(tree.root, file);
 
@@ -348,9 +348,9 @@ int avl_save_to_path(avl tree, const char *path) {
 
 avl* avl_load_from_path(const char *path) {
     FILE *file = fopen(path, "r");
-    // if (file == NULL) {
-    //     return NULL;
-    // }
+    if (file == NULL) {
+        return NULL;
+    }
 
     char key[KEY_LEN];
     uint64_t value;
