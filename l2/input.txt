@@ -1,0 +1,44 @@
++ aboba 123
++ bebra 321
+aboba
+bebra
+- aboba
++ munchkin 14569346934
++ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 777
++ cremen 11111
+munchkin
+cremen
+- cremen
+- bebra
++ k 3
++ kkk 3333
++ kkkkkkk 12214
++ oakspkoas 1231
++ iopjosfd 89
+kkkkkkk
+- cremen
+- bebra
+iopjosfd
+- aboba
+- unnamed_variable
+kkk
+- kkk
+kkk
+! Save input_tree.avl
+! Load input_tree.avl
+- kkkkkkk
++ big 959595959598495869
++ bigg 959595959598495869
++ biggg 959595959598495869
++ biag 959595959598495869
++ bib 959595959598495869
++ bic 959595959598495869
++ biq 959595959598495869
++ bif 959595959598495869
+- bib
+- big
+bib
+big
+biq
+! Save input_tree.avl
+! Load input_tree.avl
