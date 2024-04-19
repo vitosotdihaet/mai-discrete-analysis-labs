@@ -43,13 +43,13 @@ typedef struct {
 
 
 key_value key_value_new(const char key[KEY_LEN], uint64_t value) {
-    key_value kv;
+    key_value new;
 
-    strncpy(kv.key, key, KEY_LEN);
-    kv.key[KEY_LEN - 1] = '\0';
-    kv.value = value;
+    strncpy(new.key, key, KEY_LEN);
+    new.key[KEY_LEN - 1] = '\0';
+    new.value = value;
 
-    return kv;
+    return new;
 }
 
 
@@ -97,9 +97,9 @@ int64_t node_balance(node *current) {
 
 
 typedef enum {
-    ok,
-    error,
-    exists,
+    avl_result_ok,
+    avl_result_error,
+    avl_result_exists,
 } avl_result;
 
 typedef struct {
@@ -183,8 +183,8 @@ node* _avl_insert(node *current, key_value value, avl_result *result) {
     if (current == NULL) {
         node *new_node = node_new(value);
 
-        if (new_node == NULL) *result = error;
-        else *result = ok;
+        if (new_node == NULL) *result = avl_result_error;
+        else *result = avl_result_ok;
 
         return new_node;
     }
@@ -207,7 +207,7 @@ node* _avl_insert(node *current, key_value value, avl_result *result) {
 }
 
 avl_result avl_insert(avl *tree, const key_value value) {
-    avl_result result = exists;
+    avl_result result = avl_result_exists;
 
     char lowercase_key[KEY_LEN];
     strncpy(lowercase_key, value.key, KEY_LEN);
@@ -230,7 +230,7 @@ node* _avl_delete(node *current, const char *key, avl_result *result) {
     } else if (cmp > 0) {
         current->right = _avl_delete(current->right, key, result);
     } else {
-        *result = ok;
+        *result = avl_result_ok;
         // only one child or no children
         if (current->left == NULL) {
             node *right_child = current->right;
@@ -260,13 +260,13 @@ node* _avl_delete(node *current, const char *key, avl_result *result) {
 }
 
 avl_result avl_delete(avl *tree, const char *key) {
-    if (tree->root == NULL) return error;
+    if (tree->root == NULL) return avl_result_error;
 
     char lowercase_key[KEY_LEN];
     strncpy(lowercase_key, key, KEY_LEN);
     str_to_lower(lowercase_key, KEY_LEN);
 
-    avl_result result = error;
+    avl_result result = avl_result_error;
     tree->root = _avl_delete(tree->root, lowercase_key, &result);
 
     return result;
@@ -283,7 +283,7 @@ uint64_t _avl_find(node *current, const char *key, avl_result *found) {
     } else if (cmp > 0) {
         return _avl_find(current->left, key, found);
     } else {
-        *found = ok;
+        *found = avl_result_ok;
         return current->value.value;
     }
 }
@@ -293,9 +293,9 @@ uint64_t avl_find(avl tree, const char *key, avl_result *result) {
     strncpy(lowercase_key, key, KEY_LEN);
     str_to_lower(lowercase_key, KEY_LEN);
 
-    *result = error;
+    *result = avl_result_error;
     uint64_t value = _avl_find(tree.root, lowercase_key, result);
-    if (*result == ok) return value;
+    if (*result == avl_result_ok) return value;
 
     return 0;
 }
@@ -343,7 +343,7 @@ int avl_save_to_path(avl tree, const char *path) {
 
     fclose(file);
 
-    return ok;
+    return avl_result_ok;
 }
 
 avl* avl_load_from_path(const char *path) {
@@ -387,7 +387,7 @@ int main() {
 
             switch (file_command[0]) {
                 case 'S':;
-                    if (avl_save_to_path(*tree, path) == ok) printf("OK\n");
+                    if (avl_save_to_path(*tree, path) == avl_result_ok) printf("OK\n");
                     else printf("ERROR: Could not write to a file %s\n", path);
                     break;
                 case 'L':;
@@ -412,25 +412,25 @@ int main() {
                 case '+':;
                     avl_result result = avl_insert(tree, key_value_new(key, value));
                     switch (result) {
-                        case error:
+                        case avl_result_error:
                             printf("ERROR: Buy more RAM, lol\n");
                             break;
-                        case exists:
+                        case avl_result_exists:
                             printf("Exist\n");
                             break;
-                        case ok:
+                        case avl_result_ok:
                             printf("OK\n");
                             break;
                     }
                     break;
                 case '-':;
-                    if (avl_delete(tree, key) == ok) printf("OK\n");
+                    if (avl_delete(tree, key) == avl_result_ok) printf("OK\n");
                     else printf("NoSuchWord\n");
                     break;
                 default:;
-                    avl_result found = error;
+                    avl_result found = avl_result_error;
                     uint64_t value = avl_find(*tree, key, &found);
-                    if (found == ok) printf("OK: %"PRIu64"\n", value);
+                    if (found == avl_result_ok) printf("OK: %"PRIu64"\n", value);
                     else printf("NoSuchWord\n");
             }
         }
