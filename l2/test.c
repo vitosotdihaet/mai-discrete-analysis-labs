@@ -12,9 +12,9 @@ int main() {
     free(other);
 
     char string[LEN];
-    while (fgets(string, LEN, stdin) != 0) {
-        printf("%s", string);
-    }
+    // while (fgets(string, LEN, stdin) != 0) {
+    //     // printf("%s", string);
+    // }
 
     return 0;
 }

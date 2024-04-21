@@ -281,7 +281,7 @@ avl_result avl_delete(avl *tree, const char *key) {
     str_to_lower(lowercase_key, KEY_LEN);
 
     avl_result result = avl_result_error;
-    tree->root = _avl_delete(tree->root, key, &result);
+    tree->root = _avl_delete(tree->root, lowercase_key, &result);
 
     return result;
 }
@@ -327,8 +327,6 @@ void _avl_inorder_print(node *current) {
     printf("[");
     _avl_inorder_print(current->left);
     printf("] %s:%"PRIu64" {", current->value.key, node_height(current));
-    // printf("|%ld|", node_height(current));
-    // printf("%s", n->value.key);
     _avl_inorder_print(current->right);
     printf("}");
 }
