@@ -15,14 +15,16 @@
 #endif
 
 
-#define max(a, b) (a) > (b) ? (a) : (b)
+#define max(a, b) ((a) > (b) ? (a) : (b))
 
 #ifndef PATH_MAX
 #define PATH_MAX 260
 #endif
 
 #define KEY_LEN 257
-#define COMMAND_BUFFER_LENGTH 1 + 1 + KEY_LEN + 1 + 20 + 1 + 1
+#define VALUE_LEN 20
+#define COMMAND_BUFFER_LENGTH 1 + 1 + KEY_LEN + 1 + VALUE_LEN + 1 + 1
+#define FILE_LINE_LEN 2 + 1 + KEY_LEN + 1 + 2 + 1 + VALUE_LEN + 1 + 1
 
 
 
@@ -67,10 +69,7 @@ node* node_new(key_value value) {
 
     if (new == NULL) return NULL;
 
-    new->left = NULL;
-    new->right = NULL;
     new->value = value;
-    new->height = 0;
 
     return new;
 }
@@ -92,6 +91,16 @@ int64_t node_height(node *current) {
 int64_t node_balance(node *current) {
     if (current == NULL) return 0;
     return node_height(current->left) - node_height(current->right);
+}
+
+int64_t node_update_height(node *current) {
+    if (current == NULL) return -1;
+
+    int64_t left_height = node_height(current->left);
+    int64_t right_height = node_height(current->right);
+    current->height = max(left_height, right_height) + 1;
+
+    return current->height;
 }
 
 
@@ -130,8 +139,8 @@ node* avl_rotate_right(node *top) {
     top->left = moved_child;
 
     // update heights
-    top->height = max(node_height(top->left), node_height(top->right)) + 1;
-    left_son->height = max(node_height(left_son->left), node_height(left_son->right)) + 1;
+    node_update_height(top);
+    node_update_height(left_son);
 
     return left_son;
 }
@@ -154,8 +163,8 @@ node* avl_rotate_left(node *top) {
     top->right = moved_child;
 
     // update heights
-    top->height = max(node_height(top->left), node_height(top->right)) + 1;
-    right_son->height = max(node_height(right_son->left), node_height(right_son->right)) + 1;
+    node_update_height(top);
+    node_update_height(right_son);
 
     return right_son;
 }
@@ -201,21 +210,26 @@ node* _avl_insert(node *current, key_value value, avl_result *result) {
     }
 
     // update height
-    current->height = max(node_height(current->left), node_height(current->right)) + 1;
+    node_update_height(current);
 
     return avl_rebalance(current);
 }
 
-avl_result avl_insert(avl *tree, const key_value value) {
+avl_result avl_insert_lowercase(avl* tree, const key_value value) {
     avl_result result = avl_result_exists;
-
-    char lowercase_key[KEY_LEN];
-    strncpy(lowercase_key, value.key, KEY_LEN);
-    str_to_lower(lowercase_key, KEY_LEN);
-
-    tree->root = _avl_insert(tree->root, key_value_new(lowercase_key, value.value), &result);
-
+    tree->root = _avl_insert(tree->root, value, &result);
     return result;
+}
+
+avl_result avl_insert(avl *tree, const key_value value) {
+    key_value key_value_lowercase = {
+        .value = value.value
+    };
+
+    strncpy(key_value_lowercase.key, value.key, KEY_LEN);
+    str_to_lower(key_value_lowercase.key, KEY_LEN);
+
+    return avl_insert_lowercase(tree, key_value_lowercase);
 }
 
 
@@ -254,7 +268,7 @@ node* _avl_delete(node *current, const char *key, avl_result *result) {
     }
 
     // update height
-    current->height = max(node_height(current->left), node_height(current->right)) + 1;
+    node_update_height(current);
 
     return avl_rebalance(current);
 }
@@ -267,23 +281,23 @@ avl_result avl_delete(avl *tree, const char *key) {
     str_to_lower(lowercase_key, KEY_LEN);
 
     avl_result result = avl_result_error;
-    tree->root = _avl_delete(tree->root, lowercase_key, &result);
+    tree->root = _avl_delete(tree->root, key, &result);
 
     return result;
 }
 
 
-uint64_t _avl_find(node *current, const char *key, avl_result *found) {
+uint64_t _avl_find(node *current, const char *key, avl_result *result) {
     if (current == NULL) return 0;
 
     int cmp = strcmp(current->value.key, key);
 
     if (cmp < 0) {
-        return _avl_find(current->right, key, found);
+        return _avl_find(current->right, key, result);
     } else if (cmp > 0) {
-        return _avl_find(current->left, key, found);
+        return _avl_find(current->left, key, result);
     } else {
-        *found = avl_result_ok;
+        *result = avl_result_ok;
         return current->value.value;
     }
 }
@@ -312,9 +326,9 @@ void _avl_inorder_print(node *current) {
 
     printf("[");
     _avl_inorder_print(current->left);
-    printf("]%s:%"PRIu64, current->value.key, current->value.value);
+    printf("] %s:%"PRIu64" {", current->value.key, node_height(current));
+    // printf("|%ld|", node_height(current));
     // printf("%s", n->value.key);
-    printf("{");
     _avl_inorder_print(current->right);
     printf("}");
 }
@@ -353,14 +367,18 @@ avl* avl_load_from_path(const char *path) {
     }
 
     char key[KEY_LEN];
-    char line[COMMAND_BUFFER_LENGTH];
+    char line[FILE_LINE_LEN];
     uint64_t value;
 
     avl *tree = avl_new();
-    while (fgets(line, COMMAND_BUFFER_LENGTH, file) != NULL) {
-        if (line[0] != 'k') return NULL;
+    while (fgets(line, FILE_LINE_LEN, file) != NULL) {
+        if (line[0] != 'k') {
+            avl_free(tree);
+            fclose(file);
+            return NULL;
+        }
         sscanf(line, "k: %s v: %"PRIu64, key, &value);
-        avl_insert(tree, key_value_new(key, value));
+        avl_insert_lowercase(tree, key_value_new(key, value));
     }
 
     fclose(file);
@@ -410,10 +428,11 @@ int main() {
             uint64_t value = 0;
 
             sscanf(command_buffer, "%c %s %"PRIu64, &command, key, &value);
+            avl_result result = avl_result_error;
 
             switch (command) {
                 case '+':;
-                    avl_result result = avl_insert(tree, key_value_new(key, value));
+                    result = avl_insert(tree, key_value_new(key, value));
                     switch (result) {
                         case avl_result_error:
                             printf("ERROR: Buy more RAM, lol\n");
@@ -431,9 +450,8 @@ int main() {
                     else printf("NoSuchWord\n");
                     break;
                 default:;
-                    avl_result found = avl_result_error;
-                    uint64_t value = avl_find(*tree, key, &found);
-                    if (found == avl_result_ok) printf("OK: %"PRIu64"\n", value);
+                    uint64_t value = avl_find(*tree, key, &result);
+                    if (result == avl_result_ok) printf("OK: %"PRIu64"\n", value);
                     else printf("NoSuchWord\n");
             }
         }
