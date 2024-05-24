@@ -50,7 +50,6 @@
 
 #include <cstdint>
 
-static size_t global_id = 0;
 
 template <typename T>
 class TrieNode {
@@ -62,6 +61,8 @@ class TrieNode {
         TrieNode<T>* failureLink = nullptr;
         TrieNode<T>* endingLink = nullptr;
         size_t id = 0;
+
+        static size_t nextId;
 
         void print(std::ostream& os, const std::string& prefix) const {
             os << prefix << this << ": " << value;
@@ -100,7 +101,7 @@ class TrieNode {
             }
 
             currentNode->wordEnded = true;
-            currentNode->id = global_id++;
+            currentNode->id = nextId++;
         }
 
         std::vector<std::tuple<size_t, size_t, size_t>> search(const std::vector<std::vector<T>> &text) {
@@ -108,66 +109,36 @@ class TrieNode {
 
             for (size_t lineIndex = 0; lineIndex < text.size(); ++lineIndex) {
                 std::vector<T> line = text[lineIndex];
-                // reset trie
+                // reset trie on the new line
                 TrieNode<T> *currentNode = this;
 
-                // traverse the current line
                 for (size_t onLineIndex = 0; onLineIndex < line.size(); ++onLineIndex) {
                     T currentValue = line[onLineIndex];
 
-                    #ifdef DEBUG
-                    std::cout << "at " << lineIndex << " " << onLineIndex << ": " << currentValue << " currentNode =\n" << *currentNode;
-                    #endif
+                    // go through the failure links if there is no other way
+                    while (currentNode != this && currentNode->children.find(currentValue) == currentNode->children.end()) {
+                        currentNode = currentNode->failureLink;
+                    }
 
                     auto it = currentNode->children.find(currentValue);
-
-                    if (it != currentNode->children.end()) {
-                        #ifdef DEBUG
-                        std::cout << "DAM I FOUND SMTH!\n\n";
-                        #endif
-
+                    if (it != currentNode->children.end()) { // there is a way
                         currentNode = it->second;
 
-                        // check if any words end here
                         TrieNode<T> *tempNode = currentNode;
-                        while (tempNode->wordEnded) {
-                            size_t charsCounter = 0;
-                            TrieNode<T> *parent = tempNode;
-                            while (parent->parent) {
-                                parent = parent->parent;
-                                charsCounter++;
-                            }
 
-                            results.push_back({lineIndex, onLineIndex - charsCounter + 1, tempNode->id});
-                            if (tempNode->endingLink == tempNode) break;
+                        while (tempNode != nullptr) { // go through the ending links
+                            if (tempNode->wordEnded) { //  check if there is a word ending
+                                size_t charsCounter = 0;
+                                TrieNode<T> *parent = tempNode;
+                                while (parent->parent) {
+                                    parent = parent->parent;
+                                    charsCounter++;
+                                }
+
+                                results.push_back({lineIndex, onLineIndex - charsCounter + 1, tempNode->id});
+                            }
                             tempNode = tempNode->endingLink;
                         }
-                    } else {
-                        #ifdef DEBUG
-                        std::cout << "EPIC FAIL!\n\n";
-                        #endif
-
-                        if (currentNode == this) continue;
-
-                        // follow the failure link
-                        currentNode = currentNode->failureLink;
-                        // go back once, otherwise you skip this shit
-                        onLineIndex = std::max<size_t>(0, onLineIndex - 1);
-
-                        // // check if any words end here
-                        // TrieNode<T> *tempNode = currentNode;
-                        // while (tempNode->wordEnded) {
-                        //     size_t charsCounter = 0;
-                        //     TrieNode<T> *parent = tempNode;
-                        //     while (parent->parent) {
-                        //         parent = parent->parent;
-                        //         charsCounter++;
-                        //     }
-
-                        //     results.push_back({lineIndex, onLineIndex - charsCounter + 1, tempNode});
-                        //     if (tempNode->endingLink == tempNode) break;
-                        //     tempNode = tempNode->endingLink;
-                        // }
                     }
                 }
             }
@@ -220,12 +191,10 @@ class TrieNode {
                 TrieNode<T> *currentNode = q.front();
                 q.pop();
 
-                if (currentNode->failureLink->wordEnded) { // word end in a failure link
+                if (currentNode->failureLink->wordEnded) {
                     currentNode->endingLink = currentNode->failureLink;
-                } else if (currentNode->failureLink->endingLink) { // there is an ending link in a failure link
+                } else {
                     currentNode->endingLink = currentNode->failureLink->endingLink;
-                } else if (currentNode->wordEnded) { // current node is a word end, set its ending link to itself
-                    currentNode->endingLink = currentNode;
                 }
 
                 for (auto& [symbol, child] : currentNode->children) {
@@ -239,6 +208,9 @@ class TrieNode {
             return os;
         }
 };
+
+template <typename T>
+size_t TrieNode<T>::nextId = 0;
 
 template <typename T>
 class Trie : public TrieNode<T> {
