@@ -47,6 +47,7 @@
 #include <tuple>
 
 #include <algorithm>
+#include <memory>
 
 #include <cstdint>
 
@@ -81,6 +82,32 @@ class TrieNode {
             }
         }
 
+        TrieNode(const TrieNode<T>& other) {
+            value = other.value;
+            wordEnded = other.wordEnded;
+            for (auto [symbol, child] : other.children) {
+                children[symbol] = new TrieNode<T> (*child);
+                children[symbol]->parent = this;
+            }
+            // failureLink = std::copy(other.failureLink);
+            // endingLink = std::copy(other.endingLink);
+            id = other.id;
+        }
+
+        TrieNode& operator=(const TrieNode<T>& other) {
+            if (&other == this) return *this;
+            value = other.value;
+            wordEnded = other.wordEnded;
+            for (auto [symbol, child] : other.children) {
+                children[symbol] = new TrieNode<T> (*child);
+                children[symbol]->parent = this;
+            }
+            // failureLink = std::copy(other.failureLink);
+            // endingLink = std::copy(other.endingLink);
+            id = other.id;
+            return *this;
+        }
+
         void add(const std::vector<T>& word) {
             TrieNode<T> *currentNode = this;
 
@@ -107,12 +134,11 @@ class TrieNode {
         std::vector<std::tuple<size_t, size_t, size_t>> search(const std::vector<std::vector<T>> &text) {
             std::vector<std::tuple<size_t, size_t, size_t>> results;
 
+            TrieNode<T> *currentNode = this;
             for (size_t lineIndex = 0; lineIndex < text.size(); ++lineIndex) {
                 std::vector<T> line = text[lineIndex];
-                // reset trie on the new line
-                TrieNode<T> *currentNode = this;
 
-                for (size_t onLineIndex = 0; onLineIndex < line.size(); ++onLineIndex) {
+                for (int64_t onLineIndex = 0; onLineIndex < line.size(); ++onLineIndex) {
                     T currentValue = line[onLineIndex];
 
                     // go through the failure links if there is no other way
@@ -128,14 +154,15 @@ class TrieNode {
 
                         while (tempNode != nullptr) { // go through the ending links
                             if (tempNode->wordEnded) { //  check if there is a word ending
-                                size_t charsCounter = 0;
+                                int64_t charsCounter = 0;
                                 TrieNode<T> *parent = tempNode;
                                 while (parent->parent) {
                                     parent = parent->parent;
                                     charsCounter++;
                                 }
 
-                                results.push_back({lineIndex, onLineIndex - charsCounter + 1, tempNode->id});
+                                if (onLineIndex - charsCounter + 1 < 0) results.push_back({lineIndex - 1, text[lineIndex - 1].size() - charsCounter - onLineIndex + 1, tempNode->id});
+                                else results.push_back({lineIndex, onLineIndex - charsCounter + 1, tempNode->id});
                             }
                             tempNode = tempNode->endingLink;
                         }
@@ -146,6 +173,15 @@ class TrieNode {
             return results;
         }
 
+        friend std::ostream& operator<<(std::ostream& os, const TrieNode& node) {
+            node.print(os, "");
+            return os;
+        }
+
+        template <typename T1>
+        friend class AhoCorasick;
+
+    protected:
         void buildFailureLinks() {
             std::queue<TrieNode<T>*> q;
 
@@ -202,11 +238,6 @@ class TrieNode {
                 }
             }
         }
-
-        friend std::ostream& operator<<(std::ostream& os, const TrieNode& node) {
-            node.print(os, "");
-            return os;
-        }
 };
 
 template <typename T>
@@ -230,6 +261,18 @@ class AhoCorasick {
             for (std::vector<T> pattern : patterns) {
                 trie.add(pattern);
             }
+        }
+
+        // copy constructor
+        AhoCorasick(const AhoCorasick& other) {
+            trie = other.trie;
+        }
+
+        void addPattern(const std::vector<T> &pattern) {
+            trie.add(pattern);
+        }
+
+        void finish() {
             trie.buildFailureLinks();
             trie.buildEndingLinks();
         }
@@ -284,8 +327,10 @@ int main() {
 
     AhoCorasick<uint32_t> ahoCorasick(patterns);
     #ifdef DEBUG
-    std::cout << ahoCorasick << '\n';
+    std::cout << "AHO:\n" << ahoCorasick << '\n';
     #endif
+    ahoCorasick.finish();
+
     auto results = ahoCorasick.search(text);
 
     for (const auto& result : results) {
