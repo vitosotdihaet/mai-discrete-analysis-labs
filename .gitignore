@@ -7,5 +7,4 @@ l2/dmalloc*
 */main
 *.exe
 
-.vscode
 vgcore.*
