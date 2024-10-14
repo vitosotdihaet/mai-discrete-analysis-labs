@@ -4,7 +4,7 @@
         {
             "label": "Make l5",
             "type": "shell",
-            "command": "make -C ${workspaceFolder}/l5",
+            "command": "make -C '${workspaceFolder}/l5'",
             "args": [],
             "group": {
                 "kind": "build",
