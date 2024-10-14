@@ -58,6 +58,7 @@ public:
     int start = 0;
     std::shared_ptr<int> end = nullptr;
 
+    // edge ends in this node
     std::shared_ptr<SuffixTreeNode> node = nullptr;
 
     SuffixTreeEdge(const int &start, const std::shared_ptr<int> &end);
@@ -116,6 +117,8 @@ public:
 
 
         for (size_t phase = 1; phase < inputStringLength; ++phase) {
+            remainder++;
+
             std::cout << "------------------------ PHASE " << phase << " ------------------------\n";
             std::cout << "Active Point: node: " << activeNode << " edge: " << activeEdge << " length: " << activeLength << '\n';
             std::cout << "Remainder: " << remainder << '\n';
@@ -123,13 +126,12 @@ public:
 
             ++*end; // postfix ++ is not implemented (???)
 
-            for (size_t currentCharIndex = phase - remainder; currentCharIndex <= phase; ++currentCharIndex) {
+            for (size_t currentCharIndex = phase - remainder + 1; currentCharIndex <= phase; ++currentCharIndex) {
                 char currentChar = inputString[currentCharIndex];
                 auto entry = activeNode->next.find(currentChar);
                 if (entry != activeNode->next.end()) { // char is present
                     activeEdge = entry->second;
                     activeLength++;
-                    remainder++;
                 } else { // char is not present
                     activeNode->next[currentChar] = std::make_shared<SuffixTreeEdge>(phase, end);
                     remainder--;
