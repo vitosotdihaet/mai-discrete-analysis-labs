@@ -41,12 +41,14 @@ class SuffixTreeEdge;
 
 class SuffixTreeNode {
 public:
-    // chars to edges
+    // string chars to edges
     std::map<char, std::shared_ptr<SuffixTreeEdge>> next;
     std::shared_ptr<SuffixTreeNode> suffixLink = nullptr;
 
     SuffixTreeNode() {};
-    SuffixTreeNode(const char &value, const size_t &start, const std::shared_ptr<size_t> &end);
+    SuffixTreeNode(const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
+        this->next[value] = std::make_shared<SuffixTreeEdge>(start, end);
+    }
 
     void addEdge(const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
         this->next[value] = std::make_shared<SuffixTreeEdge>(start, end);
@@ -64,22 +66,33 @@ public:
     // edge ends in this node
     std::shared_ptr<SuffixTreeNode> node = nullptr;
 
-    SuffixTreeEdge(const size_t &start, const std::shared_ptr<size_t> &end);
+    SuffixTreeEdge(const size_t &start, const std::shared_ptr<size_t> &end) : start(start), end(end), node(std::make_shared<SuffixTreeNode>()) {}
 
     // split edge at this->start + length (0 < length < *this->end - this->start), returns shared pointer to a new internal node
-    std::shared_ptr<SuffixTreeNode> split(const size_t &length, const char &newChar, const char &differentChar);
-    size_t getLength() noexcept { return *this->end - this->start; }
+    std::shared_ptr<SuffixTreeNode> split(const size_t &length, const char &newChar, const char &differentChar) {
+        if (length == 0 || length >= this->getLength()) {
+            throw std::invalid_argument("length is greater than the substring's length");
+        }
+
+        const size_t stringSplitIndex = this->start + length;
+
+        std::shared_ptr<size_t> newEnd = std::make_shared<size_t>(stringSplitIndex);
+
+        std::shared_ptr<SuffixTreeNode> internalNode = std::make_shared<SuffixTreeNode>(newChar, *this->end - 1, this->end); // node with the new char
+        internalNode->addEdge(differentChar, stringSplitIndex, this->end); // old node
+
+        this->node = internalNode;
+        this->end = newEnd;
+
+        return internalNode;
+    }
+
+    size_t getLength() { return *this->end - this->start; }
 
     friend std::ostream& operator<<(std::ostream &os, const SuffixTreeEdge &edge);
 };
 
 
-
-
-
-SuffixTreeNode::SuffixTreeNode(const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
-    this->next[value] = std::make_shared<SuffixTreeEdge>(start, end);
-}
 
 std::ostream& operator<<(std::ostream &os, const SuffixTreeNode &node) {
     os << "next:\n";
@@ -88,28 +101,6 @@ std::ostream& operator<<(std::ostream &os, const SuffixTreeNode &node) {
     }
     os << "suffixLink: " << node.suffixLink;
     return os;
-}
-
-
-
-SuffixTreeEdge::SuffixTreeEdge(const size_t &start, const std::shared_ptr<size_t> &end) : start(start), end(end), node(std::make_shared<SuffixTreeNode>()) {}
-
-std::shared_ptr<SuffixTreeNode> SuffixTreeEdge::split(const size_t &length, const char &newChar, const char &differentChar) {
-    if (length == 0 || length >= this->getLength()) {
-        throw std::invalid_argument("length is greater than the substring's length");
-    }
-
-    const size_t stringSplitIndex = this->start + length;
-
-    std::shared_ptr<size_t> newEnd = std::make_shared<size_t>(stringSplitIndex);
-
-    std::shared_ptr<SuffixTreeNode> internalNode = std::make_shared<SuffixTreeNode>(newChar, *this->end - 1, this->end); // node with the new char
-    internalNode->addEdge(differentChar, stringSplitIndex, this->end); // old node
-
-    this->node = internalNode;
-    this->end = newEnd;
-
-    return internalNode;
 }
 
 std::ostream& operator<<(std::ostream &os, const SuffixTreeEdge &edge) {
@@ -193,7 +184,6 @@ private:
 
             } else { // adding from an edge
 
-                // this->canonicize(); //? is it even needed
                 std::shared_ptr<SuffixTreeNode> currentInternalNode = this->activeEdge->split(this->activeLength, currentChar, checkedChar);
                 this->remainder--;
                 this->ruleOneOrThree(currentCharIndex); //! rule 1 or 3 goes after EACH split
@@ -235,7 +225,6 @@ public:
                 } else { // there is no edge starting with this char
                     this->activeNode->addEdge(currentChar, phase, this->end); // create an edge
                     this->remainder--;
-                    // buildSuffixLink(nullptr, currentCharIndex);
                 }
 
             } else { // active point is on an edge
