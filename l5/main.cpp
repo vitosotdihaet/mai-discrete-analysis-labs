@@ -137,23 +137,70 @@ private:
     std::shared_ptr<size_t> end = std::make_shared<size_t>(0);
 
     void ruleOneOrThree(const size_t &currentCharIndex) {
+        char nextRemainingChar = '\0';
+
+        if (this->remainder - 1 > this->activeLength) {
+            nextRemainingChar = this->inputString[currentCharIndex - this->activeLength];
+        } else {
+            nextRemainingChar = this->inputString[currentCharIndex - this->remainder + 1];
+        }
+
         if (this->activeNode == this->root) { //! rule 1
-            this->activeEdge = this->root->next[this->inputString[currentCharIndex - 1]];
+            this->activeEdge = this->root->next[nextRemainingChar];
             this->activeLength--;
         } else if (this->activeNode->suffixLink != nullptr) { //! rule 3
             this->activeNode = this->activeNode->suffixLink;
-            this->activeEdge = this->activeNode->next[this->inputString[currentCharIndex - 1]];
+            this->activeEdge = this->activeNode->next[nextRemainingChar];
         } else {
             this->activeNode = this->root;
-            this->activeEdge = this->root->next[this->inputString[currentCharIndex - 1]];
+            this->activeEdge = this->root->next[nextRemainingChar];
+        }
+
+        if (activeEdge != nullptr) {
+            this->canonicize(currentCharIndex);
         }
     }
 
-    void canonicize() {
-        if (this->activeLength >= this->activeEdge->getLength()) { // substring is too smol, go further (to the node)
+    void canonicize(const size_t &currentCharIndex) {
+        size_t activeEdgeLength = this->activeEdge->getLength();
+
+        while (this->activeLength >= activeEdgeLength) { // substring is too smol, go further through the edges
             this->activeNode = this->activeEdge->node;
-            this->activeEdge = nullptr;
-            this->activeLength = 0;
+            this->activeLength = this->activeLength - activeEdgeLength;
+
+            if (this->activeLength == 0) {
+                this->activeEdge = nullptr;
+                return;
+            } else {
+                this->activeEdge = this->activeNode->next[inputString[currentCharIndex - this->activeLength]];
+                activeEdgeLength = this->activeEdge->getLength();
+            }
+        }
+    }
+
+    void buildSuffixLink(std::shared_ptr<SuffixTreeNode> &previousInternalNode, const size_t &currentCharIndex, const char &checkedChar) {
+        const char currentChar = this->inputString[currentCharIndex];
+
+        while (this->remainder > 0) {
+            if (this->activeLength == 0) { // adding from a node
+
+                this->activeNode->addEdge(currentChar, currentCharIndex, this->end);
+                if (this->activeNode != this->root) { //! rule 2
+                    previousInternalNode->suffixLink = this->activeNode;
+                    previousInternalNode = this->activeNode;
+                }
+                this->remainder--;
+
+            } else { // adding from an edge
+
+                // this->canonicize(); //? is it even needed
+                std::shared_ptr<SuffixTreeNode> currentInternalNode = this->activeEdge->split(this->activeLength, currentChar, checkedChar);
+                this->remainder--;
+                this->ruleOneOrThree(currentCharIndex); //! rule 1 or 3 goes after EACH split
+                previousInternalNode->suffixLink = currentInternalNode; //! rule 2
+                previousInternalNode = currentInternalNode;
+
+            }
         }
     }
 
@@ -162,64 +209,46 @@ public:
         inputString += '$';
         this->inputString = inputString;
 
-        size_t inputStringLength = this->inputString.length();
+        const size_t inputStringLength = this->inputString.length();
 
 
         for (size_t phase = 0; phase < inputStringLength; ++phase) {
-            (*this->end)++;
-            this->remainder++;
-
-
             std::cout << "------------------------ PHASE " << phase << " ------------------------\n";
             std::cout << "Active Point -- node: " << this->activeNode << " edge: " << this->activeEdge << " length: " << this->activeLength << '\n';
             std::cout << "Remainder: " << this->remainder << '\n';
             std::cout << "root:\n" << *this->root << '\n';
 
 
+            (*this->end)++;
+            this->remainder++;
+
             size_t currentCharIndex = phase;
-            char currentChar = this->inputString[currentCharIndex];
+            const char currentChar = this->inputString[currentCharIndex];
 
             if (this->activeLength == 0) { // active point is on a node
 
-                auto entry = this->activeNode->next.find(currentChar);
+                const auto entry = this->activeNode->next.find(currentChar);
                 if (entry != this->activeNode->next.end()) { // there is an edge starting with this char
-                    this->activeEdge = entry->second; // we entered the edge
+                    this->activeEdge = entry->second; // enter the edge
                     this->activeLength++;
+                    this->canonicize(currentCharIndex);
                 } else { // there is no edge starting with this char
-                    this->activeNode->addEdge(currentChar, phase, this->end);
+                    this->activeNode->addEdge(currentChar, phase, this->end); // create an edge
                     this->remainder--;
+                    // buildSuffixLink(nullptr, currentCharIndex);
                 }
 
             } else { // active point is on an edge
 
-                char checkedChar = this->inputString[this->activeEdge->start + this->activeLength];
+                const char checkedChar = this->inputString[this->activeEdge->start + this->activeLength];
                 if (currentChar == checkedChar) { // char is in the edge's substring
                     this->activeLength++;
-                    canonicize();
+                    this->canonicize(currentCharIndex);
                 } else { // char is not in the edge's substring
-                    // create a new node inside the edge
-                    std::shared_ptr<SuffixTreeNode> previousInternalNode = this->activeEdge->split(this->activeLength, currentChar, checkedChar);
-                    ruleOneOrThree(currentCharIndex); //! rule 1 or 3 goes right after EACH split
-
+                    std::shared_ptr<SuffixTreeNode> previousInternalNode = this->activeEdge->split(this->activeLength, currentChar, checkedChar); // create a new node inside the edge
                     this->remainder--;
-                    for (; this->remainder > 0; this->remainder--) {
-                        if (this->activeLength == 0) { // adding from a node
-
-                            this->activeNode->addEdge(currentChar, currentCharIndex, this->end);
-                            if (this->activeNode != this->root) { //! rule 2
-                                previousInternalNode->suffixLink = this->activeNode;
-                                previousInternalNode = this->activeNode;
-                            }
-
-                        } else { // adding from an edge
-
-                            canonicize();
-                            std::shared_ptr<SuffixTreeNode> currentInternalNode = this->activeEdge->split(this->activeLength, currentChar, checkedChar);
-                            ruleOneOrThree(currentCharIndex); //! rule 1 or 3 goes right after EACH split
-                            previousInternalNode->suffixLink = currentInternalNode; //! rule 2 for saving suffix links
-                            previousInternalNode = currentInternalNode;
-                        }
-                    }
+                    this->ruleOneOrThree(currentCharIndex); //! rule 1 or 3 goes after EACH split
+                    this->buildSuffixLink(previousInternalNode, currentCharIndex, checkedChar);
                 }
 
             }
@@ -236,7 +265,9 @@ int main() {
     // std::cin >> s1 >> s2;
     // SuffixTree st(s1 + '#' + s2);
 
-    SuffixTree st("abcabxabcd");
+    // st.findMaxSubstring()
+
+    SuffixTree st("abcdefabxybcdmnabcdex");
 
     return 0;
 }
