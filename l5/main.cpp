@@ -137,15 +137,21 @@ private:
         }
 
         if (this->activeNode == this->root) { //! rule 1
-            this->activeEdge = this->root->next[nextRemainingChar];
             this->activeLength--;
         } else if (this->activeNode->suffixLink != nullptr) { //! rule 3
             this->activeNode = this->activeNode->suffixLink;
-            this->activeEdge = this->activeNode->next[nextRemainingChar];
         } else {
             this->activeNode = this->root;
-            this->activeEdge = this->root->next[nextRemainingChar];
         }
+
+        //! applies to all rules
+        const auto entry = this->activeNode->next.find(nextRemainingChar);
+        if (entry != this->activeNode->next.end()) {
+            this->activeEdge = entry->second;
+        } else {
+            this->activeEdge = nullptr;
+        }
+
 
         if (activeEdge != nullptr) {
             this->canonicize(currentCharIndex);
@@ -176,10 +182,10 @@ private:
             if (this->activeLength == 0) { // adding from a node
 
                 this->activeNode->addEdge(currentChar, currentCharIndex, this->end);
-                if (this->activeNode != this->root) { //! rule 2
-                    previousInternalNode->suffixLink = this->activeNode;
-                    previousInternalNode = this->activeNode;
-                }
+                // if (this->activeNode != this->root) { //! rule 2
+                //     previousInternalNode->suffixLink = this->activeNode;
+                //     previousInternalNode = this->activeNode;
+                // }
                 this->remainder--;
 
             } else { // adding from an edge
@@ -194,21 +200,10 @@ private:
         }
     }
 
-public:
-    SuffixTree(std::string inputString) {
-        inputString += '$';
-        this->inputString = inputString;
-
+    void buildTree() {
         const size_t inputStringLength = this->inputString.length();
 
-
         for (size_t phase = 0; phase < inputStringLength; ++phase) {
-            std::cout << "------------------------ PHASE " << phase << " ------------------------\n";
-            std::cout << "Active Point -- node: " << this->activeNode << " edge: " << this->activeEdge << " length: " << this->activeLength << '\n';
-            std::cout << "Remainder: " << this->remainder << '\n';
-            std::cout << "root:\n" << *this->root << '\n';
-
-
             (*this->end)++;
             this->remainder++;
 
@@ -241,7 +236,18 @@ public:
                 }
 
             }
+
+            std::cout << "------------------------ AFTER PHASE " << phase << " ------------------------\n";
+            std::cout << "Active Point -- node: " << this->activeNode << " edge: " << this->activeEdge << " length: " << this->activeLength << '\n';
+            std::cout << "Remainder: " << this->remainder << '\n';
+            std::cout << "root:\n" << *this->root << '\n';
         }
+    }
+
+public:
+    SuffixTree(const std::string &inputString) {
+        this->inputString = inputString + '$';
+        this->buildTree();
     }
 };
 
@@ -250,13 +256,14 @@ public:
 
 
 int main() {
-    // std::string s1("lol"), s2("alob");
+    // std::string s1, s2;
     // std::cin >> s1 >> s2;
     // SuffixTree st(s1 + '#' + s2);
 
-    // st.findMaxSubstring()
+    SuffixTree st("heyamama#yabobamaavmanvamiwavm");
+    // SuffixTree st("abcdefabxybcdmnabcdx");
 
-    SuffixTree st("abcdefabxybcdmnabcdex");
+    // st.findMaxSubstring()
 
     return 0;
 }
