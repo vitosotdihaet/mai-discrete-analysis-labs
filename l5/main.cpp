@@ -19,6 +19,9 @@
         3
         bay
         xab
+
+
+* source: https://stackoverflow.com/questions/9452701/ukkonens-suffix-tree-algorithm-in-plain-english
 */
 
 
@@ -39,12 +42,14 @@ class SuffixTreeNode;
 class SuffixTreeEdge;
 
 
-
 class SuffixTreeNode {
 public:
     // string chars to edges
     std::map<char, std::shared_ptr<SuffixTreeEdge>> next;
     std::shared_ptr<SuffixTreeNode> suffixLink = nullptr;
+    size_t id = 0;
+    static size_t currentMaxSuffixIndex;
+
 
     SuffixTreeNode() {};
     SuffixTreeNode(const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
@@ -65,6 +70,9 @@ public:
     friend std::ostream& operator<<(std::ostream &os, const SuffixTreeNode &node);
 };
 
+size_t SuffixTreeNode::currentMaxSuffixIndex = 0;
+
+
 
 class SuffixTreeEdge {
 public:
@@ -73,6 +81,7 @@ public:
 
     // edge ends in this node
     std::shared_ptr<SuffixTreeNode> node = nullptr;
+
 
     SuffixTreeEdge(const size_t &start, const std::shared_ptr<size_t> &end) : start(start), end(end), node(std::make_shared<SuffixTreeNode>()) {}
 
@@ -87,6 +96,7 @@ public:
         std::shared_ptr<size_t> newEnd = std::make_shared<size_t>(stringSplitIndex);
 
         std::shared_ptr<SuffixTreeNode> internalNode = std::make_shared<SuffixTreeNode>(newChar, *this->end - 1, this->end); // node with the new char
+        internalNode->next[newChar]->node->id = SuffixTreeNode::currentMaxSuffixIndex++;
         internalNode->addEdge(this->node, differentChar, stringSplitIndex, this->end); // old node
 
         this->node = internalNode;
@@ -237,20 +247,20 @@ private:
         while (this->remainder > 0) {
             if (this->activeLength == 0) { // inserting new edge to the active node
 
-                bool lastAndNotInTree = true;
-
+                bool lastAndInTree = false;
                 if (this->remainder == 1) { //! observation 1
                     const auto entry = this->activeNode->next.find(currentChar); // i love performance
                     if (entry != this->activeNode->next.end()) {
-                        lastAndNotInTree = false;
+                        lastAndInTree = true;
                         this->activeEdge = entry->second;
                         this->activeLength++;
                         this->canonicize(currentCharIndex);
                     }
                 }
 
-                if (lastAndNotInTree) {
+                if (!lastAndInTree) {
                     this->activeNode->addEdge(currentChar, currentCharIndex, this->end);
+                    this->activeNode->next[currentChar]->node->id = SuffixTreeNode::currentMaxSuffixIndex++;
                 } else {
                     break;
                 }
@@ -293,11 +303,12 @@ private:
                     this->canonicize(currentCharIndex);
                 } else { // there is no edge starting with this char
                     this->activeNode->addEdge(currentChar, phase, this->end); // create an edge
+                    this->activeNode->next[currentChar]->node->id = SuffixTreeNode::currentMaxSuffixIndex++;
                     this->remainder--;
 
                     if (this->activeNode != this->root) {
                         std::shared_ptr<SuffixTreeNode> activeNodePreRule = this->activeNode;
-                        this->ruleThree(currentCharIndex); //! rule 3, because activeLength == 0, so rule 1 can't be applied
+                        this->ruleThree(currentCharIndex); //! rule 3. rule 1 can't be applied because activeLength is 0
                         this->buildSuffixLinks(activeNodePreRule, currentCharIndex, this->inputString[currentCharIndex - 1]);
                     }
                 }
