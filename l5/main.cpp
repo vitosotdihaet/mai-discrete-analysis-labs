@@ -26,8 +26,13 @@
 
 
 #include <iostream>
+
 #include <string>
 #include <map>
+#include <vector>
+#include <stack>
+
+#include <algorithm>
 
 #include <memory>
 #include <stdexcept>
@@ -165,7 +170,7 @@ private:
 
 private:
     // rule 1
-    void ruleOne(const size_t &currentCharIndex) {
+    void ruleOne(const size_t currentCharIndex) {
         if (this->activeNode != this->root || this->activeLength == 0) {
             throw std::logic_error("activeNode is not root or activeLength is zero");
         }
@@ -192,7 +197,7 @@ private:
     }
 
     // rule 3
-    void ruleThree(const size_t &currentCharIndex) {
+    void ruleThree(const size_t currentCharIndex) {
         if (this->activeNode == this->root) {
             throw std::logic_error("activeNode is root");
         }
@@ -223,7 +228,7 @@ private:
     }
 
     // rule 1 or 3
-    void ruleOneOrThree(const size_t &currentCharIndex) {
+    void ruleOneOrThree(const size_t currentCharIndex) {
         if (this->activeNode == this->root && this->activeLength != 0) { //! rule 1
             this->ruleOne(currentCharIndex);
         } else if (this->activeNode != this->root) { //! rule 3
@@ -232,7 +237,7 @@ private:
     }
 
     //! observation 2
-    void canonicize(const size_t &currentCharIndex) {
+    void canonicize(const size_t currentCharIndex) {
         size_t activeEdgeLength = this->activeEdge->getLength();
 
         while (this->activeLength >= activeEdgeLength) { // substring is too smol, go further through the edges
@@ -250,7 +255,7 @@ private:
     }
 
     // explicitly add all suffixes
-    void buildSuffixLinks(std::shared_ptr<SuffixTreeNode> &previousInternalNode, const size_t &currentCharIndex, const char &checkedChar) {
+    void buildSuffixLinks(std::shared_ptr<SuffixTreeNode> &previousInternalNode, const size_t currentCharIndex, const char checkedChar) {
         const char currentChar = this->inputString[currentCharIndex];
 
         while (this->remainder > 0) {
@@ -344,6 +349,24 @@ public:
         this->inputString = inputString + '$';
         this->buildTree();
     }
+
+    // find all substrings with maximal length in the suffix tree
+    // return indecies of starts of substrings in the original string and the length
+    std::pair<std::vector<size_t>, size_t> findMaxSubstrings(const std::string &pattern) {
+        const size_t patternLength = pattern.length();
+
+        std::vector<size_t> indecies;
+        size_t maxLength = 0;
+
+        std::stack<std::shared_ptr<SuffixTreeNode>> nodes;
+        nodes.push(this->root);
+
+        for (size_t index = 0; index < patternLength; ++index) { // search for ith pattern suffix via dfs
+            std::shared_ptr<SuffixTreeNode> currentNode = nodes.top();
+        }
+
+        return std::make_pair(indecies, maxLength);
+    }
 };
 
 
@@ -351,23 +374,36 @@ public:
 
 
 int main() {
-    // std::string s1, s2;
-    // std::cin >> s1 >> s2;
-
-    // if (s1.length() < s2.length()) {
-    //     std::string temp = std::move(s1);
-    //     s1 = std::move(s2);
-    //     s2 = std::move(temp);
-    // }
-
-    // SuffixTree st(s1 + '#' + s2);
-
     // SuffixTree st("amama"); //* working
     // SuffixTree st("heyamama#"); //* working
     // SuffixTree st("ayaboba"); //* working
     // SuffixTree st("ayabac"); //* working
-    SuffixTree st("heyamama#yabobamaavmanvamiwavm"); //* working
+    // SuffixTree st("heyamama#yabobamaavmanvamiwavm"); //* working
     // SuffixTree st("abcdefabxybcdmnabcdx"); //* working
 
-    // st.findMaxSubstring();
+
+    std::string s1, s2;
+    std::cin >> s1 >> s2;
+
+    if (s1.length() < s2.length()) {
+        std::string temp = std::move(s1);
+        s1 = std::move(s2);
+        s2 = std::move(temp);
+    }
+
+    SuffixTree st(s1);
+
+    std::pair<std::vector<size_t>, size_t> foundStrings = st.findMaxSubstrings(s2);
+    std::vector<size_t> &starts = foundStrings.first;
+    size_t length = foundStrings.second;
+
+    starts.erase(std::unique(starts.begin(), starts.end()), starts.end());
+    std::sort(starts.begin(), starts.end());    
+
+    if (length != 0) {
+        std::cout << length << '\n';
+        for (size_t start : starts) {
+            std::cout << start << '\n';
+        }
+    }
 }
