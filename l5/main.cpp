@@ -163,6 +163,7 @@ private:
     std::shared_ptr<size_t> end = std::make_shared<size_t>(0);
 
 
+private:
     // rule 1
     void ruleOne(const size_t &currentCharIndex) {
         if (this->activeNode != this->root || this->activeLength == 0) {
