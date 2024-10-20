@@ -38,34 +38,22 @@
 
 // c++ is a fucking joke
 
-class SuffixTreeNode;
-class SuffixTreeEdge;
+struct SuffixTreeNode;
+struct SuffixTreeEdge;
 
 
-class SuffixTreeNode {
-public:
-    // string chars to edges
+struct SuffixTreeNode {
+    static size_t currentMaxSuffixIndex;
+    // chars to edges
     std::map<char, std::shared_ptr<SuffixTreeEdge>> next;
     std::shared_ptr<SuffixTreeNode> suffixLink = nullptr;
     size_t id = 0;
-    static size_t currentMaxSuffixIndex;
 
-
-    SuffixTreeNode() {};
-    SuffixTreeNode(const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
-        this->next[value] = std::make_shared<SuffixTreeEdge>(start, end);
-    }
-
-    void addEdge(const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
-        this->next[value] = std::make_shared<SuffixTreeEdge>(start, end);
-    }
-
+    SuffixTreeNode();
+    SuffixTreeNode(const char &value, const size_t &start, const std::shared_ptr<size_t> &end);
+    void addEdge(const char &value, const size_t &start, const std::shared_ptr<size_t> &end);
     void addEdge(const std::shared_ptr<SuffixTreeNode> &node, const char &value, const size_t &start, const std::shared_ptr<size_t> &end);
-
-    std::shared_ptr<SuffixTreeNode> setSuffixLink(const std::shared_ptr<SuffixTreeNode> &node) {
-        this->suffixLink = node;
-        return node;
-    }
+    std::shared_ptr<SuffixTreeNode> setSuffixLink(const std::shared_ptr<SuffixTreeNode> &node);
 
     friend std::ostream& operator<<(std::ostream &os, const SuffixTreeNode &node);
 };
@@ -74,38 +62,16 @@ size_t SuffixTreeNode::currentMaxSuffixIndex = 0;
 
 
 
-class SuffixTreeEdge {
-public:
+struct SuffixTreeEdge {
     size_t start = 0;
     std::shared_ptr<size_t> end = nullptr;
-
     // edge ends in this node
     std::shared_ptr<SuffixTreeNode> node = nullptr;
 
-
     SuffixTreeEdge(const size_t &start, const std::shared_ptr<size_t> &end) : start(start), end(end), node(std::make_shared<SuffixTreeNode>()) {}
-
-    // split edge at this->start + length (0 < length < *this->end - this->start), returns shared pointer to a new internal node
-    std::shared_ptr<SuffixTreeNode> split(const size_t &length, const char &newChar, const char &differentChar) {
-        if (length == 0 || length >= this->getLength()) {
-            throw std::invalid_argument("length is greater than the substring's length");
-        }
-
-        const size_t stringSplitIndex = this->start + length;
-
-        std::shared_ptr<size_t> newEnd = std::make_shared<size_t>(stringSplitIndex);
-
-        std::shared_ptr<SuffixTreeNode> internalNode = std::make_shared<SuffixTreeNode>(newChar, *this->end - 1, this->end); // node with the new char
-        internalNode->next[newChar]->node->id = SuffixTreeNode::currentMaxSuffixIndex++;
-        internalNode->addEdge(this->node, differentChar, stringSplitIndex, this->end); // old node
-
-        this->node = internalNode;
-        this->end = newEnd;
-
-        return internalNode;
-    }
-
-    size_t getLength() { return *this->end - this->start; }
+    // split the edge at this->start + length (0 < length < *this->end - this->start), returns shared pointer to a new internal node
+    std::shared_ptr<SuffixTreeNode> split(const size_t &length, const char &newChar, const char &differentChar);
+    size_t getLength();
 
     friend std::ostream& operator<<(std::ostream &os, const SuffixTreeEdge &edge);
 };
@@ -114,10 +80,26 @@ public:
 
 
 
+// implementation of SuffixTreeNode
+SuffixTreeNode::SuffixTreeNode() {}
+
+SuffixTreeNode::SuffixTreeNode(const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
+    this->next[value] = std::make_shared<SuffixTreeEdge>(start, end);
+}
+
+void SuffixTreeNode::addEdge(const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
+    this->next[value] = std::make_shared<SuffixTreeEdge>(start, end);
+}
+
 void SuffixTreeNode::addEdge(const std::shared_ptr<SuffixTreeNode> &node, const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
     std::shared_ptr<SuffixTreeEdge> newEdge = std::make_shared<SuffixTreeEdge>(start, end);
     newEdge->node = node;
     this->next[value] = newEdge;
+}
+
+std::shared_ptr<SuffixTreeNode> SuffixTreeNode::setSuffixLink(const std::shared_ptr<SuffixTreeNode> &node) {
+    this->suffixLink = node;
+    return node;
 }
 
 std::ostream& operator<<(std::ostream &os, const SuffixTreeNode &node) {
@@ -129,6 +111,32 @@ std::ostream& operator<<(std::ostream &os, const SuffixTreeNode &node) {
     return os;
 }
 
+
+
+
+// implementation of SuffixTreeEdge
+std::shared_ptr<SuffixTreeNode> SuffixTreeEdge::split(const size_t &length, const char &newChar, const char &differentChar) {
+    if (length == 0 || length >= this->getLength()) {
+        throw std::invalid_argument("length is greater than the substring's length");
+    }
+
+    const size_t stringSplitIndex = this->start + length;
+
+    std::shared_ptr<size_t> newEnd = std::make_shared<size_t>(stringSplitIndex);
+
+    std::shared_ptr<SuffixTreeNode> internalNode = std::make_shared<SuffixTreeNode>(newChar, *this->end - 1, this->end); // node with the new char
+    internalNode->next[newChar]->node->id = SuffixTreeNode::currentMaxSuffixIndex++;
+    internalNode->addEdge(this->node, differentChar, stringSplitIndex, this->end); // old node
+
+    this->node = internalNode;
+    this->end = newEnd;
+
+    return internalNode;
+}
+
+size_t SuffixTreeEdge::getLength() {
+    return *this->end - this->start;
+}
 
 std::ostream& operator<<(std::ostream &os, const SuffixTreeEdge &edge) {
     os << ' ' << edge.start << ":" << *edge.end << " (" << edge.end << ") node: " << edge.node;
@@ -344,16 +352,21 @@ public:
 int main() {
     // std::string s1, s2;
     // std::cin >> s1 >> s2;
+
+    // if (s1.length() < s2.length()) {
+    //     std::string temp = std::move(s1);
+    //     s1 = std::move(s2);
+    //     s2 = std::move(temp);
+    // }
+
     // SuffixTree st(s1 + '#' + s2);
 
     // SuffixTree st("amama"); //* working
     // SuffixTree st("heyamama#"); //* working
     // SuffixTree st("ayaboba"); //* working
     // SuffixTree st("ayabac"); //* working
-    // SuffixTree st("heyamama#yabobamaavmanvamiwavm"); //* working
+    SuffixTree st("heyamama#yabobamaavmanvamiwavm"); //* working
     // SuffixTree st("abcdefabxybcdmnabcdx"); //* working
 
     // st.findMaxSubstring();
-
-    return 0;
 }
