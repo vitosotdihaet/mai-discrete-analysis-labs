@@ -361,9 +361,13 @@ public:
         std::stack<std::shared_ptr<SuffixTreeNode>> nodes;
         nodes.push(this->root);
 
-        for (size_t index = 0; index < patternLength; ++index) { // search for ith pattern suffix via dfs
-            std::shared_ptr<SuffixTreeNode> currentNode = nodes.top();
-        }
+        // TODO
+        // for (size_t index = 0; index < patternLength; ++index) { // search for indexth pattern's suffix via dfs
+        //     while (nodes.size() > 0) {
+        //         std::shared_ptr<SuffixTreeNode> currentNode = nodes.top();
+
+        //     }
+        // }
 
         return std::make_pair(indecies, maxLength);
     }
@@ -382,8 +386,10 @@ int main() {
     // SuffixTree st("abcdefabxybcdmnabcdx"); //* working
 
 
-    std::string s1, s2;
-    std::cin >> s1 >> s2;
+    // std::string s1, s2;
+    // std::cin >> s1 >> s2;
+
+    std::string s1("xabay"), s2("xabcbay");
 
     if (s1.length() < s2.length()) {
         std::string temp = std::move(s1);
