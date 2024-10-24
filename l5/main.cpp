@@ -47,6 +47,7 @@ struct SuffixTreeNode;
 struct SuffixTreeEdge;
 
 
+
 struct SuffixTreeNode {
     static size_t currentMaxSuffixIndex;
     // chars to edges
@@ -59,6 +60,8 @@ struct SuffixTreeNode {
     void addEdge(const char &value, const size_t &start, const std::shared_ptr<size_t> &end);
     void addEdge(const std::shared_ptr<SuffixTreeNode> &node, const char &value, const size_t &start, const std::shared_ptr<size_t> &end);
     std::shared_ptr<SuffixTreeNode> setSuffixLink(const std::shared_ptr<SuffixTreeNode> &node);
+
+    bool empty();
 
     friend std::ostream& operator<<(std::ostream &os, const SuffixTreeNode &node);
 };
@@ -80,6 +83,7 @@ struct SuffixTreeEdge {
 
     friend std::ostream& operator<<(std::ostream &os, const SuffixTreeEdge &edge);
 };
+
 
 
 
@@ -107,6 +111,10 @@ std::shared_ptr<SuffixTreeNode> SuffixTreeNode::setSuffixLink(const std::shared_
     return node;
 }
 
+bool SuffixTreeNode::empty() {
+    return this->next.empty();
+}
+
 std::ostream& operator<<(std::ostream &os, const SuffixTreeNode &node) {
     os << "next:\n";
     for (const auto& [key, value] : node.next) {
@@ -115,7 +123,6 @@ std::ostream& operator<<(std::ostream &os, const SuffixTreeNode &node) {
     os << "suffixLink: " << node.suffixLink;
     return os;
 }
-
 
 
 
@@ -151,14 +158,14 @@ std::ostream& operator<<(std::ostream &os, const SuffixTreeEdge &edge) {
 class SuffixTree {
 private:
     std::string inputString;
+    size_t inputStringLength = 0;
 
     std::shared_ptr<SuffixTreeNode> root = std::make_shared<SuffixTreeNode>();
-
 
     std::shared_ptr<SuffixTreeNode> activeNode = this->root;
     std::shared_ptr<SuffixTreeEdge> activeEdge = nullptr;
     size_t activeLength = 0;
-    size_t trueActiveLength = 0;
+    size_t depth = 0;
 
     size_t remainder = 0;
 
@@ -168,19 +175,19 @@ private:
 private:
     //! rule 1
     void ruleOne(const size_t currentCharIndex) {
-        if (this->activeNode != this->root || this->trueActiveLength == 0) {
+        if (this->activeNode != this->root || this->depth == 0) {
             throw std::logic_error("activeNode is not root or activeLength is zero");
         }
 
         char nextRemainingChar = this->inputString[currentCharIndex - this->remainder + 1];
 
         // apply the rule
-        this->trueActiveLength--;
+        this->depth--;
 
         const auto entry = this->activeNode->next.find(nextRemainingChar);
         if (entry != this->activeNode->next.end()) {
             this->activeEdge = entry->second;
-            this->activeLength = this->trueActiveLength;
+            this->activeLength = this->depth;
             this->canonicize(currentCharIndex);
         } else {
             this->activeLength = 0;
@@ -206,7 +213,7 @@ private:
         // apply the rule
         if (this->activeNode->suffixLink != nullptr) {
             this->activeNode = this->activeNode->suffixLink;
-            this->trueActiveLength--;
+            this->depth--;
         } else {
             this->activeNode = this->root;
             this->ruleOne(currentCharIndex);
@@ -260,7 +267,7 @@ private:
                 if (entry != this->activeNode->next.end()) {
                     this->activeEdge = entry->second;
                     this->activeLength++;
-                    this->trueActiveLength++;
+                    this->depth++;
                     this->canonicize(currentCharIndex);
                     break;
                 }
@@ -292,9 +299,7 @@ private:
     }
 
     void buildTree() {
-        const size_t inputStringLength = this->inputString.length();
-
-        for (size_t phase = 0; phase < inputStringLength; ++phase) {
+        for (size_t phase = 0; phase < this->inputStringLength; ++phase) {
             (*this->end)++;
             this->remainder++;
 
@@ -308,7 +313,7 @@ private:
                 if (entry != this->activeNode->next.end()) { // there is an edge starting with this char
                     this->activeEdge = entry->second; // enter the edge
                     this->activeLength++;
-                    this->trueActiveLength++;
+                    this->depth++;
                     this->canonicize(currentCharIndex);
                 } else { // there is no edge starting with this char
                     this->activeNode->addEdge(currentChar, phase, this->end); // create an edge
@@ -327,7 +332,7 @@ private:
                 const char checkedChar = this->inputString[this->activeEdge->start + this->activeLength];
                 if (currentChar == checkedChar) { // char is in the edge's substring
                     this->activeLength++;
-                    this->trueActiveLength++;
+                    this->depth++;
                     this->canonicize(currentCharIndex);
                 } else { // char is not in the edge's substring, should split and create a new internal node
                     std::shared_ptr<SuffixTreeNode> previousInternalNode = this->activeEdge->split(this->end, this->activeLength, currentChar, checkedChar); // create a new node inside the edge
@@ -340,15 +345,73 @@ private:
         }
     }
 
+    // return a tuple consisting of two booleans (node starts at string1 and node starts at string2), a vector of suffix node ids
+    std::tuple<bool, bool, std::vector<size_t>, size_t> findMaxSubstringsInNode(const std::shared_ptr<SuffixTreeNode> &node, const size_t dividerIndex) {
+        std::vector<size_t> indecies;
+        size_t maxLength = 0;
+
+        bool inString1 = false;
+        bool inString2 = false;
+
+        for (auto const &[_, edge] : node->next) { // iterate over all edges
+            if (edge->node->empty()) { // leaf node at this edge => check its id and decide whether to keep it or not 
+                const size_t id = edge->node->id;
+                if (id > dividerIndex && id != this->inputStringLength - 1) { // suffix is in `string2`
+                    inString1 = true;
+                } else if (id < dividerIndex) { // suffix is in `string1`
+                    inString2 = true;
+                }
+            } else { // edge ends in an internal node => go deeper, save edge's string position, indecies and length
+                auto [currentInString1, currentInString2, currentIndecies, currentLength] = findMaxSubstringsInNode(edge->node, dividerIndex);
+
+                inString1 = inString1 || currentInString1;
+                inString2 = inString2 || currentInString2;
+
+                const size_t edgeLength = edge->getLength();
+                if (currentInString1 && currentInString2) {
+                    if (currentLength + edgeLength > maxLength) { // new length is bigger => save only this edge's start
+                        indecies.clear();
+                        indecies.push_back(edge->start);
+                        maxLength = currentLength + edgeLength;
+                    } else if (currentLength + edgeLength == maxLength) { // new length is equal => save new this edge's start
+                        indecies.push_back(edge->start);
+                    }
+                }
+            }
+        }
+
+        if (inString1 && inString2) {
+            indecies.push_back(0);
+        }
+
+        return std::make_tuple(inString1, inString2, indecies, maxLength);        
+    }
+
 public:
     SuffixTree(const std::string &inputString) {
         this->inputString = inputString + '\0';
+        this->inputStringLength = this->inputString.length();
         this->buildTree();
     }
 
-    // find all substrings with maximal length in the suffix tree
-    // return indecies of starts of substrings in the pattern and their length
-    std::pair<std::vector<size_t>, size_t> findMaxSubstrings(const std::string &pattern) {
+    // SuffixTree should be constructed like this: `string1` + '#' + `string2`
+    // find all common substrings in `string1` and `string2` with maximal length in the suffix tree
+    // return indecies of starts of substrings in the `string1` and their length
+    std::pair<std::vector<size_t>, size_t> findMaxSubstrings() {
+        size_t dividerIndex = this->inputString.find('#');
+        if (dividerIndex >= this->inputStringLength - 1) {
+            throw std::logic_error("tree was not constructed properly for finding max common substring");
+        }
+
+        // dfs until leaf nodes. if a leaf node has id of index < dividerIndex => the suffix is in the text, if id is > index('#') => the suffix is in the pattern
+        // if the suffix is in the pattern and is in text it is a substring
+        auto [_, __, indecies, maxSubstringLength] = this->findMaxSubstringsInNode(this->root, dividerIndex);
+        indecies.pop_back();
+
+        return std::make_pair(indecies, maxSubstringLength);
+    }
+
+    std::pair<std::vector<size_t>, size_t> findMaxSubstrings1(const std::string &pattern) {
         const size_t patternLength = pattern.length();
 
         std::vector<size_t> indecies;
@@ -446,42 +509,65 @@ int main() {
 
     // std::string text("xabay"), pattern("xabcbay"); //* working
     // std::string text("heyamama"), pattern("yabobamaavmanvamiwavm");
-    // std::string text("abobababaobaobaoba"), pattern("abdawbaiubeboab");
+    std::string text("abobababaobaobaoba"), pattern("abdawbaiubeboab");
     // std::string text("index"), pattern("ia ab!iab ab?iab ab");
     // std::string text("index"), pattern("amakamam");
 
 
 
-    std::string text, pattern;
-    std::cin >> text >> pattern;
+    // std::string text, pattern;
+    // std::cin >> text >> pattern;
+    
+    {
+        SuffixTree st(text);
+        std::pair<std::vector<size_t>, size_t> foundStrings = st.findMaxSubstrings1(pattern);
+        size_t length = foundStrings.second;
+        if (length == 0) { 
+            return 0;
+        }
 
-    if (text.length() < pattern.length()) {
-        std::string temp = std::move(text);
-        text = std::move(pattern);
-        pattern = std::move(temp);
+        std::vector<size_t> &starts = foundStrings.first;
+
+        std::vector<std::string> substrings;
+        substrings.reserve(starts.size());
+        for (size_t start : starts) {
+            substrings.push_back(text.substr(start, length));
+        }
+
+        std::sort(substrings.begin(), substrings.end());    
+        substrings.erase(std::unique(substrings.begin(), substrings.end()), substrings.end());
+
+        std::cout << "OLD\n"; 
+        std::cout << length << '\n';
+        for (std::string &substring : substrings) {
+            std::cout << substring << '\n';
+        }
     }
 
-    SuffixTree st(text);
+    {
+        SuffixTree st(text + '#' + pattern);
 
-    std::pair<std::vector<size_t>, size_t> foundStrings = st.findMaxSubstrings(pattern);
-    size_t length = foundStrings.second;
-    if (length == 0) { 
-        return 0;
-    }
+        std::pair<std::vector<size_t>, size_t> foundStrings = st.findMaxSubstrings();
+        size_t length = foundStrings.second;
+        if (length == 0) { 
+            return 0;
+        }
 
-    std::vector<size_t> &starts = foundStrings.first;
+        std::vector<size_t> &starts = foundStrings.first;
 
-    std::vector<std::string> substrings;
-    substrings.reserve(starts.size());
-    for (size_t start : starts) {
-        substrings.push_back(pattern.substr(start, length));
-    }
+        std::vector<std::string> substrings;
+        substrings.reserve(starts.size());
+        for (size_t start : starts) {
+            substrings.push_back(text.substr(start, length));
+        }
 
-    std::sort(substrings.begin(), substrings.end());    
-    substrings.erase(std::unique(substrings.begin(), substrings.end()), substrings.end());
+        std::sort(substrings.begin(), substrings.end());    
+        substrings.erase(std::unique(substrings.begin(), substrings.end()), substrings.end());
 
-    std::cout << length << '\n';
-    for (std::string &substring : substrings) {
-        std::cout << substring << '\n';
+        std::cout << "\nNEW\n"; 
+        std::cout << length << '\n';
+        for (std::string &substring : substrings) {
+            std::cout << substring << '\n';
+        }
     }
 }
