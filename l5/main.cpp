@@ -56,9 +56,9 @@ struct SuffixTreeNode {
     size_t id = 0;
 
     SuffixTreeNode();
-    SuffixTreeNode(const char &value, const size_t &start, const std::shared_ptr<size_t> &end);
-    void addEdge(const char &value, const size_t &start, const std::shared_ptr<size_t> &end);
-    void addEdge(const std::shared_ptr<SuffixTreeNode> &node, const char &value, const size_t &start, const std::shared_ptr<size_t> &end);
+    SuffixTreeNode(const char value, const size_t start, const std::shared_ptr<size_t> &end);
+    void addEdge(const char value, const size_t start, const std::shared_ptr<size_t> &end);
+    void addEdge(const std::shared_ptr<SuffixTreeNode> &node, const char value, const size_t start, const std::shared_ptr<size_t> &end);
     std::shared_ptr<SuffixTreeNode> setSuffixLink(const std::shared_ptr<SuffixTreeNode> &node);
 
     bool empty();
@@ -76,7 +76,7 @@ struct SuffixTreeEdge {
     // edge ends in this node
     std::shared_ptr<SuffixTreeNode> node = nullptr;
 
-    SuffixTreeEdge(const size_t &start, const std::shared_ptr<size_t> &end) : start(start), end(end), node(std::make_shared<SuffixTreeNode>()) {}
+    SuffixTreeEdge(const size_t start, const std::shared_ptr<size_t> &end);
     // split the edge at this->start + length (0 < length < *this->end - this->start), returns shared pointer to a new internal node
     std::shared_ptr<SuffixTreeNode> split(const std::shared_ptr<size_t> &currentEnd, const size_t length, const char newChar, const char differentChar);
     size_t getLength();
@@ -92,15 +92,15 @@ struct SuffixTreeEdge {
 // implementation of SuffixTreeNode
 SuffixTreeNode::SuffixTreeNode() {}
 
-SuffixTreeNode::SuffixTreeNode(const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
+SuffixTreeNode::SuffixTreeNode(const char value, const size_t start, const std::shared_ptr<size_t> &end) {
     this->next[value] = std::make_shared<SuffixTreeEdge>(start, end);
 }
 
-void SuffixTreeNode::addEdge(const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
+void SuffixTreeNode::addEdge(const char value, const size_t start, const std::shared_ptr<size_t> &end) {
     this->next[value] = std::make_shared<SuffixTreeEdge>(start, end);
 }
 
-void SuffixTreeNode::addEdge(const std::shared_ptr<SuffixTreeNode> &node, const char &value, const size_t &start, const std::shared_ptr<size_t> &end) {
+void SuffixTreeNode::addEdge(const std::shared_ptr<SuffixTreeNode> &node, const char value, const size_t start, const std::shared_ptr<size_t> &end) {
     std::shared_ptr<SuffixTreeEdge> newEdge = std::make_shared<SuffixTreeEdge>(start, end);
     newEdge->node = node;
     this->next[value] = newEdge;
@@ -127,6 +127,8 @@ std::ostream& operator<<(std::ostream &os, const SuffixTreeNode &node) {
 
 
 // implementation of SuffixTreeEdge
+SuffixTreeEdge::SuffixTreeEdge(const size_t start, const std::shared_ptr<size_t> &end) : start(start), end(end), node(std::make_shared<SuffixTreeNode>()) {}
+
 std::shared_ptr<SuffixTreeNode> SuffixTreeEdge::split(const std::shared_ptr<size_t> &currentEnd, const size_t length, const char newChar, const char differentChar) {
     if (length == 0 || length >= this->getLength()) {
         throw std::invalid_argument("length is greater than the substring's length");
