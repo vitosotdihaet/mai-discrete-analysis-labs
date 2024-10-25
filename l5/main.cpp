@@ -98,6 +98,7 @@ SuffixTreeNode::SuffixTreeNode(const char value, const size_t start, const std::
 
 void SuffixTreeNode::addEdge(const char value, const size_t start, const std::shared_ptr<size_t> &end) {
     this->next[value] = std::make_shared<SuffixTreeEdge>(start, end);
+    this->next[value]->node->id = SuffixTreeNode::currentMaxSuffixIndex++;
 }
 
 void SuffixTreeNode::addEdge(const std::shared_ptr<SuffixTreeNode> &node, const char value, const size_t start, const std::shared_ptr<size_t> &end) {
@@ -275,7 +276,6 @@ private:
                 }
 
                 this->activeNode->addEdge(currentChar, currentCharIndex, this->end);
-                this->activeNode->next[currentChar]->node->id = SuffixTreeNode::currentMaxSuffixIndex++;
 
                 if (this->activeNode != this->root) { //! rule 2
                     previousInternalNode = previousInternalNode->setSuffixLink(this->activeNode);
@@ -302,6 +302,7 @@ private:
 
     void buildTree() {
         for (size_t phase = 0; phase < this->inputStringLength; ++phase) {
+            // if (phase == 10) break;
             (*this->end)++;
             this->remainder++;
 
@@ -319,7 +320,6 @@ private:
                     this->canonicize(currentCharIndex);
                 } else { // there is no edge starting with this char
                     this->activeNode->addEdge(currentChar, phase, this->end); // create an edge
-                    this->activeNode->next[currentChar]->node->id = SuffixTreeNode::currentMaxSuffixIndex++;
                     this->remainder--;
 
                     if (this->activeNode != this->root) {
@@ -566,10 +566,10 @@ int main() {
         std::sort(substrings.begin(), substrings.end());    
         substrings.erase(std::unique(substrings.begin(), substrings.end()), substrings.end());
 
-        std::cout << "\nNEW\n"; 
-        std::cout << length << '\n';
-        for (std::string &substring : substrings) {
-            std::cout << substring << '\n';
-        }
-    }
+    //     // std::cout << "\nNEW\n"; 
+    //     std::cout << length << '\n';
+    //     for (std::string &substring : substrings) {
+    //         std::cout << substring << '\n';
+    //     }
+    // }
 }
