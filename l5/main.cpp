@@ -566,10 +566,10 @@ int main() {
         std::sort(substrings.begin(), substrings.end());    
         substrings.erase(std::unique(substrings.begin(), substrings.end()), substrings.end());
 
-    //     // std::cout << "\nNEW\n"; 
-    //     std::cout << length << '\n';
-    //     for (std::string &substring : substrings) {
-    //         std::cout << substring << '\n';
-    //     }
-    // }
+        std::cout << "\nNEW\n"; 
+        std::cout << length << '\n';
+        for (std::string &substring : substrings) {
+            std::cout << substring << '\n';
+        }
+    }
 }
