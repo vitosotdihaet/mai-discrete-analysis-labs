@@ -29,6 +29,7 @@
 
 #include <string>
 #include <map>
+#include <set>
 #include <vector>
 #include <stack>
 
@@ -347,46 +348,51 @@ private:
         }
     }
 
-    // return a tuple consisting of two booleans (node starts at string1 and node starts at string2), a vector of suffix node ids
-    std::tuple<bool, bool, std::vector<size_t>, size_t> findMaxSubstringsInNode(const std::shared_ptr<SuffixTreeNode> &node, const size_t dividerIndex) {
+    // return a tuple consisting of two booleans (node starts at string1 and node starts at string2), a vector of suffix node ids, length, and any leaf node id
+    std::tuple<bool, bool, std::vector<size_t>, size_t, size_t> findAllLCSInNode(const std::shared_ptr<SuffixTreeNode> &node, const size_t dividerIndex, const size_t currentDepth) {
         std::vector<size_t> indecies;
         size_t maxLength = 0;
+
+        const size_t leafId = (*node->next.begin()).second->node->id;
 
         bool inString1 = false;
         bool inString2 = false;
 
         for (auto const &[_, edge] : node->next) { // iterate over all edges
-            if (edge->node->empty()) { // leaf node at this edge => check its id and decide whether to keep it or not 
-                const size_t id = edge->node->id;
-                if (id > dividerIndex && id != this->inputStringLength - 1) { // suffix is in `string2`
+            const size_t nodeId = edge->node->id;
+            const size_t edgeLength = edge->getLength();
+
+            if (edge->node->empty()) { // leaf node at this edge => check its id and decide whether to keep it or not
+                if (nodeId < dividerIndex) { // suffix is in `string1`
                     inString1 = true;
-                } else if (id < dividerIndex) { // suffix is in `string1`
+                } else if (nodeId > dividerIndex && nodeId != this->inputStringLength - 1) { // suffix is in `string2`
                     inString2 = true;
                 }
             } else { // edge ends in an internal node => go deeper, save edge's string position, indecies and length
-                auto [currentInString1, currentInString2, currentIndecies, currentLength] = findMaxSubstringsInNode(edge->node, dividerIndex);
+                auto [currentInString1, currentInString2, currentIndecies, currentLength, currentLeafId] = findAllLCSInNode(edge->node, dividerIndex, currentDepth + edgeLength);
 
                 inString1 = inString1 || currentInString1;
                 inString2 = inString2 || currentInString2;
 
-                const size_t edgeLength = edge->getLength();
-                if (currentInString1 && currentInString2) {
-                    if (currentLength + edgeLength > maxLength) { // new length is bigger => save only this edge's start
-                        indecies.clear();
-                        indecies.push_back(edge->start);
-                        maxLength = currentLength + edgeLength;
-                    } else if (currentLength + edgeLength == maxLength) { // new length is equal => save new this edge's start
-                        indecies.push_back(edge->start);
+                if (currentInString1 && currentInString2 && currentLength >= maxLength) {
+                    if (currentLength > maxLength) { // new length is bigger => save only this edge's start
+                        maxLength = currentLength;
+                        indecies.clear();   
+                    }
+                    indecies.reserve(indecies.size() + currentIndecies.size());
+                    for (const size_t &index : currentIndecies) {
+                        indecies.push_back(index);
                     }
                 }
             }
         }
 
-        if (inString1 && inString2) {
-            indecies.push_back(0);
+        if (inString1 && inString2 && maxLength <= currentDepth) {
+            maxLength = currentDepth;
+            indecies.push_back(leafId);
         }
 
-        return std::make_tuple(inString1, inString2, indecies, maxLength);        
+        return std::make_tuple(inString1, inString2, indecies, maxLength, leafId);        
     }
 
 public:
@@ -398,101 +404,58 @@ public:
 
     // SuffixTree should be constructed like this: `string1` + '#' + `string2`
     // find all common substrings in `string1` and `string2` with maximal length in the suffix tree
-    // return indecies of starts of substrings in the `string1` and their length
-    std::pair<std::vector<size_t>, size_t> findMaxSubstrings() {
+    // return indecies of starts of substrings in the input string and max length
+    std::pair<std::vector<size_t>, size_t> findAllLCS() {
         size_t dividerIndex = this->inputString.find('#');
         if (dividerIndex >= this->inputStringLength - 1) {
-            throw std::logic_error("tree was not constructed properly for finding max common substring");
+            throw std::logic_error("tree was not constructed properly for finding longest common substrings");
         }
 
-        // dfs until leaf nodes. if a leaf node has id of index < dividerIndex => the suffix is in the text, if id is > index('#') => the suffix is in the pattern
-        // if the suffix is in the pattern and is in text it is a substring
-        auto [_, __, indecies, maxSubstringLength] = this->findMaxSubstringsInNode(this->root, dividerIndex);
-        indecies.pop_back();
-
-        return std::make_pair(indecies, maxSubstringLength);
-    }
-
-    std::pair<std::vector<size_t>, size_t> findMaxSubstrings1(const std::string &pattern) {
-        const size_t patternLength = pattern.length();
-
-        std::vector<size_t> indecies;
-        size_t maxSubstringLength = 0;
-
-        for (size_t suffixIndex = 0; suffixIndex < patternLength; ++suffixIndex) { // search for ith pattern's suffix via dfs from root
-            this->activeNode = this->root;
-            this->activeEdge = nullptr;
-            this->activeLength = 0;
-
-            size_t index;
-            for (index = suffixIndex; index < patternLength; ++index) {
-                const size_t substringLength = index - suffixIndex;
-                const char currentChar = pattern[index];
-
-                if (this->activeLength == 0) {
-                    const auto entry = this->activeNode->next.find(currentChar);
-                    if (entry != this->activeNode->next.end()) { // there is an edge starting with this char
-                        this->activeEdge = entry->second; // enter the edge
-                        this->activeLength++;
-                        if (this->activeLength == this->activeEdge->getLength()) {
-                            this->activeNode = this->activeEdge->node;
-                            this->activeEdge = nullptr;
-                            this->activeLength = 0;
-                        }
-                    } else {
-                        if (maxSubstringLength == substringLength) {
-                            indecies.push_back(suffixIndex);
-                        } else if (maxSubstringLength < substringLength) {
-                            maxSubstringLength = substringLength;
-                            indecies.clear();
-                            indecies.push_back(suffixIndex);
-                        }
-                        break;
-                    }
-                } else {
-                    const char checkedChar = this->inputString[this->activeEdge->start + this->activeLength];
-                    if (currentChar == checkedChar) { // char is in the edge's substring
-                        this->activeLength++;
-                        if (this->activeLength == this->activeEdge->getLength()) {
-                            this->activeNode = this->activeEdge->node;
-                            this->activeEdge = nullptr;
-                            this->activeLength = 0;
-                        }
-                    } else { // char is not in the edge's substring, should split and create a new internal node
-                        if (maxSubstringLength == substringLength) {
-                            indecies.push_back(suffixIndex);
-                        } else if (maxSubstringLength < substringLength) {
-                            maxSubstringLength = substringLength;
-                            indecies.clear();
-                            indecies.push_back(suffixIndex);
-                        }
-                        break;
-                    }
-                }
-            }
-
-            if (index == patternLength) {
-                size_t substringLength = index - suffixIndex;
-                if (maxSubstringLength == substringLength) {
-                    indecies.push_back(suffixIndex);
-                } else if (maxSubstringLength < substringLength) {
-                    maxSubstringLength = substringLength;
-                    indecies.clear();
-                    indecies.push_back(suffixIndex);
-                }
-                break;
-            }
-
-            // TODO: check
-            // if (maxSubstringLength >= patternLength - 1 - suffixIndex) { // there are no strings, with length bigger than the current maxSubstringLength
-            //     break;
-            // }
-        }
+        // dfs until leaf nodes. if a leaf node has id < dividerIndex => the suffix is in the text, if id > index('#') => the suffix is in the pattern
+        // if the suffix is in the pattern and is in text it is a common substring
+        auto [_, __, indecies, maxSubstringLength, ___] = this->findAllLCSInNode(this->root, dividerIndex, 0);
 
         return std::make_pair(indecies, maxSubstringLength);
     }
 };
 
+
+
+
+
+void all_lcs(const std::string &text, const std::string &pattern) {
+    size_t m = text.length(), n = pattern.length();
+
+    size_t maxLength = 0;
+    std::vector<std::string> result;
+
+    for (size_t i = 0; i < m; ++i) {
+        for (size_t j = 0; j < n; ++j) {
+            size_t currentLength = 0;
+            std::string currentSubstring;
+            while (i + currentLength < m && j + currentLength < n && text[i + currentLength] == pattern[j + currentLength]) {
+                currentSubstring.push_back(text[i + currentLength]);
+                currentLength++;
+            }
+
+            if (maxLength < currentLength) {
+                maxLength = currentLength;
+                result.clear();
+                result.push_back(currentSubstring);
+            } else if (maxLength == currentLength) {
+                result.push_back(currentSubstring);
+            }
+        }
+    }
+    
+    std::sort(result.begin(), result.end());
+    result.erase(std::unique(result.begin(), result.end()), result.end());
+
+    std::cout << maxLength << '\n';
+    for (const std::string &s : result) {
+        std::cout << s << '\n';
+    }
+}
 
 
 
@@ -511,65 +474,42 @@ int main() {
 
     // std::string text("xabay"), pattern("xabcbay"); //* working
     // std::string text("heyamama"), pattern("yabobamaavmanvamiwavm");
-    std::string text("abobababaobaobaoba"), pattern("abdawbaiubeboab");
+    // std::string text("abobababaobaobaoba"), pattern("abdawbaiubeboab");
     // std::string text("index"), pattern("ia ab!iab ab?iab ab");
+    // std::string text("absvcoiaibuabbabbobasobaobababoba"), pattern("bfasybaioaubcysbauaybababababybvbapbybaipubcxc");
+    // std::string text("ub!ub!"), pattern("ub0ub0");
     // std::string text("index"), pattern("amakamam");
+    // std::string text("aacbdab"), pattern("abcd");
+    // std::string text("abobabaoba"), pattern("abdwabab");
 
 
 
-    // std::string text, pattern;
-    // std::cin >> text >> pattern;
+    std::string text, pattern;
+    std::cin >> text >> pattern;
+
+    std::string inputString = text + '#' + pattern;
     
-    {
-        SuffixTree st(text);
-        std::pair<std::vector<size_t>, size_t> foundStrings = st.findMaxSubstrings1(pattern);
-        size_t length = foundStrings.second;
-        if (length == 0) { 
-            return 0;
-        }
+    // std::cout << "RIGHT:\n";
+    // all_lcs(text, pattern);
+    // std::cout << "\nMINE:\n";
 
-        std::vector<size_t> &starts = foundStrings.first;
+    SuffixTree st(inputString);
 
-        std::vector<std::string> substrings;
-        substrings.reserve(starts.size());
-        for (size_t start : starts) {
-            substrings.push_back(text.substr(start, length));
-        }
-
-        std::sort(substrings.begin(), substrings.end());    
-        substrings.erase(std::unique(substrings.begin(), substrings.end()), substrings.end());
-
-        std::cout << "OLD\n"; 
-        std::cout << length << '\n';
-        for (std::string &substring : substrings) {
-            std::cout << substring << '\n';
-        }
+    std::pair<std::vector<size_t>, size_t> foundStrings = st.findAllLCS();
+    size_t length = foundStrings.second;
+    if (length == 0) {
+        return 0;
     }
 
-    {
-        SuffixTree st(text + '#' + pattern);
+    std::vector<size_t> &starts = foundStrings.first;
 
-        std::pair<std::vector<size_t>, size_t> foundStrings = st.findMaxSubstrings();
-        size_t length = foundStrings.second;
-        if (length == 0) { 
-            return 0;
-        }
+    std::set<std::string> substrings;
+    for (const size_t &start : starts) {
+        substrings.insert(inputString.substr(start, length));
+    }
 
-        std::vector<size_t> &starts = foundStrings.first;
-
-        std::vector<std::string> substrings;
-        substrings.reserve(starts.size());
-        for (size_t start : starts) {
-            substrings.push_back(text.substr(start, length));
-        }
-
-        std::sort(substrings.begin(), substrings.end());    
-        substrings.erase(std::unique(substrings.begin(), substrings.end()), substrings.end());
-
-        std::cout << "\nNEW\n"; 
-        std::cout << length << '\n';
-        for (std::string &substring : substrings) {
-            std::cout << substring << '\n';
-        }
+    std::cout << length << '\n';
+    for (const std::string &substring : substrings) {
+        std::cout << substring << '\n';
     }
 }
