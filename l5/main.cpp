@@ -481,7 +481,7 @@ int main() {
     // std::string text("absvcoiaibuabbabbobasobaobababoba"), pattern("bfasybaioaubcysbauaybababababybvbapbybaipubcxc");
     // std::string text("ub!ub!"), pattern("ub0ub0");
     // std::string text("index"), pattern("amakamam");
-    std::string text("aacbdab"), pattern("abcd");
+    // std::string text("aacbdab"), pattern("abcd");
     // std::string text("abobabaoba"), pattern("abdwabab");
 
 
