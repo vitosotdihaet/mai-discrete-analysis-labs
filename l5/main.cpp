@@ -353,14 +353,15 @@ private:
         std::vector<size_t> indecies;
         size_t maxLength = 0;
 
-        const size_t leafId = (*node->next.begin()).second->node->id;
+        size_t leafId;
 
         bool inString1 = false;
         bool inString2 = false;
 
-        for (auto const &[_, edge] : node->next) { // iterate over all edges
+        for (const auto &[_, edge] : node->next) { // iterate over all edges
             const size_t nodeId = edge->node->id;
             const size_t edgeLength = edge->getLength();
+            leafId = nodeId;
 
             if (edge->node->empty()) { // leaf node at this edge => check its id and decide whether to keep it or not
                 if (nodeId < dividerIndex) { // suffix is in `string1`
@@ -370,6 +371,7 @@ private:
                 }
             } else { // edge ends in an internal node => go deeper, save edge's string position, indecies and length
                 auto [currentInString1, currentInString2, currentIndecies, currentLength, currentLeafId] = findAllLCSInNode(edge->node, dividerIndex, currentDepth + edgeLength);
+                leafId = currentLeafId;
 
                 inString1 = inString1 || currentInString1;
                 inString2 = inString2 || currentInString2;
@@ -479,13 +481,19 @@ int main() {
     // std::string text("absvcoiaibuabbabbobasobaobababoba"), pattern("bfasybaioaubcysbauaybababababybvbapbybaipubcxc");
     // std::string text("ub!ub!"), pattern("ub0ub0");
     // std::string text("index"), pattern("amakamam");
-    // std::string text("aacbdab"), pattern("abcd");
+    std::string text("aacbdab"), pattern("abcd");
     // std::string text("abobabaoba"), pattern("abdwabab");
 
 
 
     std::string text, pattern;
     std::cin >> text >> pattern;
+
+    if (text.length() > pattern.length()) {
+        std::string temp = std::move(pattern);
+        pattern = std::move(text);
+        text = std::move(temp);
+    }
 
     std::string inputString = text + '#' + pattern;
     
