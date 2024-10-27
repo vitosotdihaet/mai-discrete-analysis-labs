@@ -404,6 +404,7 @@ public:
         this->buildTree();
     }
 
+    // SuffixTree should be initialized with text
     // find all LCS in the suffix tree
     // return indecies of starts of substrings in the pattern and their length
     std::pair<std::vector<size_t>, size_t> findAllLCS(const std::string &pattern) {
@@ -483,13 +484,29 @@ public:
 
         return std::make_pair(indecies, maxSubstringLength);
     }
+
+    // SuffixTree should be constructed like this: `string1` + '#' + `string2`
+    // find all common substrings in `string1` and `string2` with maximal length in the suffix tree
+    // return indecies of starts of substrings in the input string and max length
+    std::pair<std::vector<size_t>, size_t> findAllLCS() {
+        size_t dividerIndex = this->inputString.find('#');
+        if (dividerIndex >= this->inputStringLength - 1) {
+            throw std::logic_error("tree was not constructed properly for finding longest common substrings");
+        }
+
+        // dfs until leaf nodes. if a leaf node has id < dividerIndex => the suffix is in the text, if id > index('#') => the suffix is in the pattern
+        // if the suffix is in the pattern and is in text it is a common substring
+        auto [_, __, indecies, maxSubstringLength, ___] = this->findAllLCSInNode(this->root, dividerIndex, 0);
+
+        return std::make_pair(indecies, maxSubstringLength);
+    }
 };
 
 
 
 
 
-void all_lcs(const std::string &text, const std::string &pattern) {
+std::vector<std::string> all_lcs(const std::string &text, const std::string &pattern) {
     size_t m = text.length(), n = pattern.length();
 
     size_t maxLength = 0;
@@ -517,38 +534,77 @@ void all_lcs(const std::string &text, const std::string &pattern) {
     std::sort(result.begin(), result.end());
     result.erase(std::unique(result.begin(), result.end()), result.end());
 
-    std::cout << maxLength << '\n';
-    for (const std::string &s : result) {
-        std::cout << s << '\n';
+    return result;
+}
+
+void test() {
+    std::vector<std::string> texts = {
+        "xabay",
+        "heyamama",
+        "abobababaobaobaoba",
+        "index",
+        "absvcoiaibuabbabbobasobaobababoba",
+        "ub!ub!",
+        "index",
+        "aacbdab",
+        "abobabaoba",
+        "for(size_tj=0;j<n;++j)ult.push_back(currentSubstring);std::vector<std::string>"
+    };
+
+    std::vector<std::string> patterns = {
+        "xabcbay",
+        "yabobamaavmanvamiwavm",
+        "abdawbaiubeboab",
+        "ia ab!iab ab?iab ab",
+        "bfasybaioaubcysbauaybababababybvbapbybaipubcxc",
+        "ub0ub0",
+        "amakamam",
+        "abcd",
+        "abdwabab",
+        "vectorstringsetsize_tj++push_",
+    };
+
+
+    for (size_t i = 0; i < texts.size(); ++i) {
+        std::cout << "TEST №" << i << '\n';
+        const std::string &text = texts[i];
+        const std::string &pattern = patterns[i];
+
+        SuffixTree st(text);
+
+        std::pair<std::vector<size_t>, size_t> foundStrings = st.findAllLCS(pattern);
+        size_t length = foundStrings.second;
+        if (length == 0) {
+            continue;
+        }
+
+        std::vector<size_t> &starts = foundStrings.first;
+
+        std::set<std::string> substrings;
+        for (const size_t &start : starts) {
+            substrings.insert(pattern.substr(start, length));
+        }
+
+        std::vector<std::string> smart(substrings.begin(), substrings.end());
+        std::vector<std::string> stupid = all_lcs(text, pattern);
+        std::cout << length << '\n';
+        for (size_t t = 0; t < stupid.size(); ++t) {
+            if (stupid[t] != smart[t]) {
+                std::cout << "ERROR ON TEST №" << i << '\n';
+            }
+            std::cout << smart[t] << '\n';
+        }
+        std::cout << '\n';
     }
 }
 
 
 
 
+
 int main() {
-    // SuffixTree st1("amama"); //* working
-    // SuffixTree st2("heyamama#"); //* working
-    // SuffixTree st3("ayaboba"); //* working
-    // SuffixTree st4("ayabac"); //* working
-    // SuffixTree st5("heyamama#yabobamaavmanvamiwavm"); //* working
-    // SuffixTree st6("abcdefabxybcdmnabcdx"); //* working
-    // SuffixTree st7("amakamam"); //* working
-    // SuffixTree st8("abobababaobaobaoba"); //* working
-
-
-
-    // std::string text("xabay"), pattern("xabcbay"); //* working
-    // std::string text("heyamama"), pattern("yabobamaavmanvamiwavm");
-    // std::string text("abobababaobaobaoba"), pattern("abdawbaiubeboab");
-    // std::string text("index"), pattern("ia ab!iab ab?iab ab");
-    // std::string text("absvcoiaibuabbabbobasobaobababoba"), pattern("bfasybaioaubcysbauaybababababybvbapbybaipubcxc");
-    // std::string text("ub!ub!"), pattern("ub0ub0");
-    // std::string text("index"), pattern("amakamam");
-    // std::string text("aacbdab"), pattern("abcd");
-    // std::string text("abobabaoba"), pattern("abdwabab");
-
-
+    // test();
+    // return 0;
 
     std::string text, pattern;
     std::cin >> text >> pattern;
@@ -558,11 +614,6 @@ int main() {
         pattern = std::move(text);
         text = std::move(temp);
     }
-
-    
-    // std::cout << "RIGHT:\n";
-    // all_lcs(text, pattern);
-    // std::cout << "\nMINE:\n";
 
     SuffixTree st(text);
 
