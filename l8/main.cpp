@@ -1,5 +1,7 @@
 #include <iostream>
 #include <vector>
+#include <limits>
+
 
 
 template <typename T>
@@ -12,18 +14,42 @@ T power(T base, T exponent) {
 }
 
 
+
 std::vector<uint64_t> dynamic(const std::vector<uint64_t> &coins, const uint64_t amount) {
     const size_t coinsSize = coins.size();
 
-    // vector of pairs: count of all coins and a vector of count of each coin
-    std::vector<std::pair<uint64_t, std::vector<uint64_t>>> dp(amount + 1, std::pair<uint64_t, std::vector<uint64_t>>(0, std::vector<uint64_t>(coinsSize, 0)));
+    const uint64_t u64Max = std::numeric_limits<uint64_t>::max();
 
-    for (size_t i = 0; i < amount + 1; ++i) {
+    // vector of pairs: count of coins and the last added coin for current amount
+    std::vector<std::pair<uint64_t, uint64_t>> dp(amount + 1, std::pair<uint64_t, uint64_t>(u64Max, 0));
+    dp[0].first = 0;
 
+    for (size_t currentAmount = 0; currentAmount <= amount; ++currentAmount) {
+        for (size_t currentCoinIndex = 0; currentCoinIndex < coinsSize; ++currentCoinIndex) {
+            const uint64_t currentCoin = coins[currentCoinIndex];
+
+            if (currentAmount + currentCoin > amount) break;
+
+            if (dp[currentAmount].first + 1 < dp[currentAmount + currentCoin].first) {
+                dp[currentAmount + currentCoin].first = dp[currentAmount].first + 1;
+                dp[currentAmount + currentCoin].second = currentCoinIndex;
+            }
+        }
     }
 
-    return dp[amount].second;
+    std::vector<uint64_t> result(coinsSize, 0);
+
+    size_t currentAmount = amount;
+    while (currentAmount != 0) {
+        const size_t currentCoinIndex = dp[currentAmount].second;
+        const uint64_t currentCoin = coins[currentCoinIndex];
+        result[currentCoinIndex]++;
+        currentAmount -= currentCoin;
+    }
+
+    return result;
 }
+
 
 std::vector<uint64_t> greedy(const std::vector<uint64_t> &coins, uint64_t amount) {
     const size_t coinsSize = coins.size();
@@ -49,7 +75,8 @@ std::vector<uint64_t> greedy(const std::vector<uint64_t> &coins, uint64_t amount
 int main() {
     uint64_t exponent, base, amount;
     std::cin >> exponent >> base >> amount;
-    // exponent = 3, base = 5, amount = 71;
+
+    // exponent = 8, base = 12, amount = 71212381927;
 
     std::vector<std::uint64_t> coins(exponent);
     for (size_t currentExponent = 1; currentExponent <= exponent; ++currentExponent) {
@@ -59,8 +86,8 @@ int main() {
     std::vector<uint64_t> result = dynamic(coins, amount);
     // std::vector<uint64_t> result = greedy(coins, amount);
 
-    for (size_t i = 0; i < exponent; ++i) {
-        std::cout << result[i] << '\n';
+    for (const uint64_t &count : result) {
+        std::cout << count << '\n';
     }
 
     return 0;

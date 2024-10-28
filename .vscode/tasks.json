@@ -12,6 +12,18 @@
             },
             "problemMatcher": [],
             "detail": "Build l5"
+        },
+        {
+            "label": "Make l8",
+            "type": "shell",
+            "command": "make",
+            "args": ["-C", "'${workspaceFolder}/l8'"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "Build l8"
         }
     ]
 }

@@ -13,5 +13,14 @@
             "cwd": "${workspaceFolder}/l5",
             "preLaunchTask": "Make l5"
         },
+        {
+            "name": "Debug l8",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/l8/main",
+            "args": [],
+            "cwd": "${workspaceFolder}/l8",
+            "preLaunchTask": "Make l8"
+        },
     ]
 }
