@@ -15,16 +15,14 @@ T power(T base, T exponent) {
 
 
 
-std::vector<uint64_t> dynamic(const std::vector<uint64_t> &coins, const uint64_t amount) {
+std::vector<uint32_t> dynamic(const std::vector<uint64_t> &coins, const uint32_t amount) {
     const size_t coinsSize = coins.size();
 
-    const uint64_t u64Max = std::numeric_limits<uint64_t>::max();
-
     // vector of pairs: count of coins and the last added coin for current amount
-    std::vector<std::pair<uint64_t, uint64_t>> dp(amount + 1, std::pair<uint64_t, uint64_t>(u64Max, 0));
+    std::vector<std::pair<uint32_t, uint64_t>> dp(amount + 1, std::pair<uint32_t, uint64_t>(amount, 0));
     dp[0].first = 0;
 
-    for (size_t currentAmount = 0; currentAmount <= amount; ++currentAmount) {
+    for (uint32_t currentAmount = 0; currentAmount <= amount; ++currentAmount) {
         for (size_t currentCoinIndex = 0; currentCoinIndex < coinsSize; ++currentCoinIndex) {
             const uint64_t currentCoin = coins[currentCoinIndex];
 
@@ -37,7 +35,7 @@ std::vector<uint64_t> dynamic(const std::vector<uint64_t> &coins, const uint64_t
         }
     }
 
-    std::vector<uint64_t> result(coinsSize, 0);
+    std::vector<uint32_t> result(coinsSize, 0);
 
     size_t currentAmount = amount;
     while (currentAmount != 0) {
@@ -73,20 +71,21 @@ std::vector<uint64_t> greedy(const std::vector<uint64_t> &coins, uint64_t amount
 
 
 int main() {
-    uint64_t exponent, base, amount;
+    uint64_t exponent, base;
+    uint32_t amount;
+
     std::cin >> exponent >> base >> amount;
 
-    // exponent = 8, base = 12, amount = 71212381927;
-
+    // populate coins
     std::vector<std::uint64_t> coins(exponent);
     for (size_t currentExponent = 1; currentExponent <= exponent; ++currentExponent) {
         coins[currentExponent - 1] = power(base, currentExponent);
     }
 
-    std::vector<uint64_t> result = dynamic(coins, amount);
+    std::vector<uint32_t> result = dynamic(coins, amount);
     // std::vector<uint64_t> result = greedy(coins, amount);
 
-    for (const uint64_t &count : result) {
+    for (uint32_t count : result) {
         std::cout << count << '\n';
     }
 
