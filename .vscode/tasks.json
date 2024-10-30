@@ -14,6 +14,18 @@
             "detail": "Build l5"
         },
         {
+            "label": "Make l7",
+            "type": "shell",
+            "command": "make",
+            "args": ["-C", "'${workspaceFolder}/l7'"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "Build l7"
+        },
+        {
             "label": "Make l8",
             "type": "shell",
             "command": "make",
@@ -24,6 +36,6 @@
             },
             "problemMatcher": [],
             "detail": "Build l8"
-        }
+        },
     ]
 }
