@@ -25,7 +25,7 @@ std::vector<uint32_t> dynamic(const std::vector<uint64_t> &coins, const uint32_t
         for (size_t currentCoinIndex = 0; currentCoinIndex < coinsSize; ++currentCoinIndex) {
             const uint64_t currentCoin = coins[currentCoinIndex];
 
-            if (currentAmount + currentCoin > amount) break;
+            if (currentAmount + currentCoin > amount) continue;
 
             if (dp[currentAmount].first + 1 < dp[currentAmount + currentCoin].first) {
                 dp[currentAmount + currentCoin].first = dp[currentAmount].first + 1;
