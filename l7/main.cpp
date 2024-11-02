@@ -27,8 +27,8 @@ uint32_t maxRectangleInHistogram(const std::vector<uint16_t> &histogram) {
             uint16_t currentWidth;
             if (biggestHeightIndecies.empty()) { // this index is the biggest width so far
                 currentWidth = currentHeightIndex;
-            } else { // take the last height index that was smaller than the biggest height
-                currentWidth = currentHeightIndex - biggestHeightIndecies.top() - 1;
+            } else { // take the last height index that was smaller than the biggest height + 1
+                currentWidth = currentHeightIndex - (biggestHeightIndecies.top() + 1);
             }
 
             maxSquare = std::max(maxSquare, (uint32_t) biggestHeight * (uint32_t) currentWidth);
