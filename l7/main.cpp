@@ -6,7 +6,7 @@
 
 
 uint32_t maxRectangleInHistogram(const std::vector<uint16_t> &histogram) {
-    std::stack<uint32_t> biggestHeightIndecies;
+    std::stack<uint16_t> biggestHeightIndecies;
 
     uint32_t maxSquare = 0;
     const uint16_t width = histogram.size();
@@ -15,7 +15,7 @@ uint32_t maxRectangleInHistogram(const std::vector<uint16_t> &histogram) {
         uint16_t currentHeight;
         if (currentHeightIndex != width) {
             currentHeight = histogram[currentHeightIndex];
-        } else { // last "rectangle" height is always zero
+        } else { // last bar height is always zero
             currentHeight = 0;
         }
 
