@@ -303,7 +303,6 @@ private:
 
     void buildTree() {
         for (size_t phase = 0; phase < this->inputStringLength; ++phase) {
-            // if (phase == 10) break;
             (*this->end)++;
             this->remainder++;
 

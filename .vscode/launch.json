@@ -14,6 +14,15 @@
             "preLaunchTask": "Make l5"
         },
         {
+            "name": "Debug l5 problem",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/l5/problem",
+            "args": [],
+            "cwd": "${workspaceFolder}/l5",
+            "preLaunchTask": "Make l5 problem"
+        },
+        {
             "name": "Debug l7",
             "type": "lldb",
             "request": "launch",

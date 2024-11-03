@@ -10,7 +10,17 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": [],
+            "detail": "Build l5"
+        },
+        {
+            "label": "Make l5 problem",
+            "type": "shell",
+            "command": "g++",
+            "args": ["-o", "'${workspaceFolder}/l5/problem'", "'${workspaceFolder}/l5/problem.cpp'", "-std=c++17", "-Wall", "-Wextra", "-ggdb"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "detail": "Build l5"
         },
         {
@@ -22,7 +32,6 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": [],
             "detail": "Build l7"
         },
         {
@@ -34,7 +43,6 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": [],
             "detail": "Build l8"
         },
     ]
