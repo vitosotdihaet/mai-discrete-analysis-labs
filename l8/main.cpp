@@ -2,15 +2,15 @@
 #include <vector>
 
 
-
-template <typename T>
-T power(const T base, const T exponent) {
-    T result = 1;
-    for (T _ = 1; _ < exponent; ++_) {
-        result *= base;
-    }
-    return result;
-}
+// позор
+// template <typename T>
+// T power(const T base, const T exponent) {
+//     T result = 1;
+//     for (T _ = 1; _ < exponent; ++_) {
+//         result *= base;
+//     }
+//     return result;
+// }
 
 
 
@@ -75,10 +75,14 @@ int main() {
 
     std::cin >> exponent >> base >> amount;
 
+    uint64_t realBase = 1;
+
     // populate coins
     std::vector<std::uint64_t> coins(exponent);
-    for (size_t currentExponent = 1; currentExponent <= exponent; ++currentExponent) {
-        coins[currentExponent - 1] = power(base, currentExponent);
+    coins[0] = realBase;
+    for (size_t i = 1; i < exponent; ++i) {
+        coins[i] = realBase * base;
+        realBase *= base;
     }
 
     // std::vector<uint32_t> result = dynamic(coins, amount);
