@@ -13,17 +13,6 @@
             "detail": "Build l5"
         },
         {
-            "label": "Make l5 problem",
-            "type": "shell",
-            "command": "g++",
-            "args": ["-o", "'${workspaceFolder}/l5/problem'", "'${workspaceFolder}/l5/problem.cpp'", "-std=c++17", "-Wall", "-Wextra", "-ggdb"],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "detail": "Build l5"
-        },
-        {
             "label": "Make l7",
             "type": "shell",
             "command": "make",
@@ -44,6 +33,17 @@
                 "isDefault": true
             },
             "detail": "Build l8"
+        },
+        {
+            "label": "Make coursework",
+            "type": "shell",
+            "command": "make",
+            "args": ["-C", "'${workspaceFolder}/cp'"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Build coursework"
         },
     ]
 }
