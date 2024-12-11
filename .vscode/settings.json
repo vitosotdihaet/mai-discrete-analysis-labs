@@ -51,6 +51,10 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "set": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "optional": "cpp",
+        "iomanip": "cpp",
+        "queue": "cpp",
+        "unordered_set": "cpp"
     }
 }

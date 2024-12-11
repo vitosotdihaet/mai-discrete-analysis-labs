@@ -35,7 +35,7 @@
             "detail": "Build l8"
         },
         {
-            "label": "Make coursepaper",
+            "label": "Make course project",
             "type": "shell",
             "command": "make",
             "args": ["-C", "'${workspaceFolder}/cp'"],
@@ -43,7 +43,7 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "detail": "Build coursepaper"
+            "detail": "Build course project"
         },
     ]
 }

@@ -1,6 +1,7 @@
 CXX = g++
 
 CXXFLAGS = -std=c++17 -Wall -Wextra -ggdb
+TESTFLAG = 
 
 TARGET = main
 
@@ -12,7 +13,7 @@ debug: CXXFLAGS += -DDEBUG
 debug: $(TARGET)
 
 $(TARGET): $(SRCS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SRCS)
+	$(CXX) $(CXXFLAGS) $(TESTFLAG) -o $(TARGET) $(SRCS)
 
 clean:
 	rm -f $(TARGET) *.o

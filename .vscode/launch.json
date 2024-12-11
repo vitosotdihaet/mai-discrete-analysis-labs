@@ -32,13 +32,13 @@
             "preLaunchTask": "Make l8"
         },
         {
-            "name": "Debug coursepaper",
+            "name": "Debug course project",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/cp/main",
             "args": [],
             "cwd": "${workspaceFolder}/cp",
-            "preLaunchTask": "Make coursepaper"
+            "preLaunchTask": "Make course project"
         },
     ]
 }
