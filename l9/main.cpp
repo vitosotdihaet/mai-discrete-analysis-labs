@@ -29,10 +29,9 @@ std::optional<uint64_t> dijkstra(const size_t vertexCount, const size_t start, c
 
         if (distance > distances[vertex]) { continue; }
 
-        // relax the edges
         for (const Edge &edge : graph[vertex]) {
             size_t adjacentVertex = edge.to;
-            uint64_t newDistance = distances[vertex] + edge.weight;
+            uint64_t newDistance = distance + edge.weight;
 
             if (newDistance < distances[adjacentVertex]) {
                 distances[adjacentVertex] = newDistance;
