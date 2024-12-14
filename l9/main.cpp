@@ -23,20 +23,20 @@ std::optional<uint64_t> dijkstra(const size_t vertexCount, const size_t start, c
 
     while (!distanceToVertex.empty()) {
         const auto [distance, vertex] = distanceToVertex.top();
+        if (vertex == finish) { break; }
+
         distanceToVertex.pop();
 
-        if (distance > distances[vertex]) {
-            continue;
-        }
+        if (distance > distances[vertex]) { continue; }
 
         // relax the edges
         for (const Edge &edge : graph[vertex]) {
-            size_t nextVertex = edge.to;
+            size_t adjacentVertex = edge.to;
             uint64_t newDistance = distances[vertex] + edge.weight;
 
-            if (newDistance < distances[nextVertex]) {
-                distances[nextVertex] = newDistance;
-                distanceToVertex.emplace(newDistance, nextVertex);
+            if (newDistance < distances[adjacentVertex]) {
+                distances[adjacentVertex] = newDistance;
+                distanceToVertex.emplace(newDistance, adjacentVertex);
             }
         }
     }
