@@ -16,15 +16,14 @@ struct Edge {
 std::optional<uint64_t> dijkstra(const size_t vertexCount, const size_t start, const size_t finish, const std::vector<std::vector<Edge>> &graph) {
     // distances to the starting vertex
     std::vector<uint64_t> distances(vertexCount, std::numeric_limits<uint64_t>::max());
-    // { weight, id }
-    std::priority_queue<std::pair<uint64_t, size_t>, std::vector<std::pair<uint64_t, size_t>>, std::greater<>> pq;
+    std::priority_queue<std::pair<uint64_t, size_t>, std::vector<std::pair<uint64_t, size_t>>, std::greater<>> distanceToVertex;
 
     distances[start] = 0;
-    pq.emplace(0, start);
+    distanceToVertex.emplace(0, start);
 
-    while (!pq.empty()) {
-        const auto [distance, vertex] = pq.top();
-        pq.pop();
+    while (!distanceToVertex.empty()) {
+        const auto [distance, vertex] = distanceToVertex.top();
+        distanceToVertex.pop();
 
         if (distance > distances[vertex]) {
             continue;
@@ -37,7 +36,7 @@ std::optional<uint64_t> dijkstra(const size_t vertexCount, const size_t start, c
 
             if (newDistance < distances[nextVertex]) {
                 distances[nextVertex] = newDistance;
-                pq.emplace(newDistance, nextVertex);
+                distanceToVertex.emplace(newDistance, nextVertex);
             }
         }
     }
