@@ -24,6 +24,7 @@ bool test_case(
     size_t nodeCount = positions.size();
     std::vector<Node<T>> nodes;
     nodes.reserve(nodeCount);
+    std::vector<std::vector<std::pair<size_t, double>>> graph(nodeCount);
 
     for (const auto &[x, y] : positions) {
         nodes.emplace_back(x, y);
@@ -31,12 +32,13 @@ bool test_case(
 
     for (auto &[from, to] : edges) {
         from--; to--;
+
         double distance = nodes[from].to(nodes[to]);
-        nodes[from].edges.emplace(to, distance);
-        nodes[to].edges.emplace(from, distance);
+        graph[from].emplace_back(to, distance);
+        graph[to].emplace_back(from, distance);
     }
     
-    AStar astar(nodes);
+    AStar astar(graph, nodes);
 
     for (size_t i = 0; i < fromtos.size(); ++i) {
         std::optional<double> result = astar.shortestPath(fromtos[i].first - 1, fromtos[i].second - 1);
