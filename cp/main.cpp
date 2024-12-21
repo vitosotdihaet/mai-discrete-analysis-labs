@@ -64,7 +64,6 @@ public:
 
 
         std::vector<bool> visited(nodes.size(), false);
-        std::vector<bool> opened(nodes.size(), false);
         std::vector<size_t> parents(nodes.size(), SIZE_T_MAX);
 
         auto compareNodesAtIndices = [&](std::pair<size_t, double> p1, std::pair<size_t, double> p2) {
@@ -85,9 +84,6 @@ public:
             if (currentID == toID) { break; }
 
             open.pop();
-
-            if (opened[currentID]) { continue; }
-            opened[currentID] = true;
 
             visited[currentID] = true;
 
