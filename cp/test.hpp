@@ -20,14 +20,13 @@ bool test_case(
     std::vector<std::pair<size_t, size_t>> &fromtos,
     std::vector<double> &answers
 ) {
-    Node<T>::globalID = 0;
     size_t nodeCount = positions.size();
     std::vector<Node<T>> nodes;
     nodes.reserve(nodeCount);
     std::vector<std::vector<std::pair<size_t, double>>> graph(nodeCount);
 
-    for (const auto &[x, y] : positions) {
-        nodes.emplace_back(x, y);
+    for (uint32_t i = 0; i < nodeCount; ++i) {
+        nodes.emplace_back(i, positions[i].first, positions[i].second);
     }
 
     for (auto &[from, to] : edges) {

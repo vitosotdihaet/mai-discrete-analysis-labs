@@ -1,15 +1,13 @@
 #include <iostream>
 #include <iomanip>
-#include <optional>
 
 #include <vector>
 #include <set>
-#include <unordered_set>
 #include <map>
-#include <unordered_map>
+#include <queue>
 
 #include <cmath>
-#include <memory>
+#include <cinttypes>
 
 
 
@@ -22,15 +20,11 @@ private:
     T x = 0, y = 0;
 public:
     size_t id = 0;
-    static size_t globalID;
     double heuristicCost = DOUBLE_INF;
     double pathCost = DOUBLE_INF;
 
-private:
 public:
-    Node() : id(Node<T>::globalID++) {}
-
-    Node(T x, T y) : x(x), y(y), id(Node<T>::globalID++) {}
+    Node(size_t id, T x, T y) : x(x), y(y), id(id) {}
 
     double to(Node<T> other) {
         double dx = this->x - other.x;
@@ -44,8 +38,6 @@ public:
     }
 };
 
-template <typename T>
-size_t Node<T>::globalID = 0;
 
 
 template <typename T>
@@ -57,11 +49,11 @@ private:
 public:
     AStar(std::vector<std::vector<std::pair<size_t, double>>> &graph, std::vector<Node<T>> &nodes) : graph(graph), nodes(nodes) {}
 
-    std::optional<double> shortestPath(size_t fromIndex, size_t toIndex) {
-        if (fromIndex == toIndex) { return 0; }
+    double shortestPath(size_t fromID, size_t toID) {
+        if (fromID == toID) { return 0; }
 
-        Node<T> &start = this->nodes[fromIndex];
-        Node<T> &end = this->nodes[toIndex];
+        Node<T> &start = this->nodes[fromID];
+        Node<T> &end = this->nodes[toID];
 
         for (Node<T> &n : nodes) {
             n.pathCost = DOUBLE_INF;
@@ -70,60 +62,52 @@ public:
 
         start.pathCost = 0;
 
+
         std::vector<bool> visited(nodes.size(), false);
+        std::vector<bool> opened(nodes.size(), false);
         std::vector<size_t> parents(nodes.size(), SIZE_T_MAX);
 
-
-        auto compareNodesAtIndices = [&](size_t firstIndex, size_t secondIndex) {
-            if (firstIndex == secondIndex) { return false; }
-
-            const Node<T> &first = this->nodes[firstIndex];
-            const Node<T> &second = this->nodes[secondIndex];
-
-            const double fCost = first.pathCost + first.heuristicCost;
-            const double sCost = second.pathCost + second.heuristicCost;
-
-            if (fCost == sCost) {
-                return firstIndex < secondIndex;
+        auto compareNodesAtIndices = [&](std::pair<size_t, double> p1, std::pair<size_t, double> p2) {
+            if (p1.second == p2.second) {
+                return p1.first < p2.first;
             }
 
-            return fCost < sCost;
+            return p1.second > p2.second;
         };
 
-        std::set<size_t, decltype(compareNodesAtIndices)> open(compareNodesAtIndices);
-        open.insert(start.id);
+        std::priority_queue<std::pair<size_t, double>, std::vector<std::pair<size_t, double>>, decltype(compareNodesAtIndices)> open(compareNodesAtIndices);
+        open.emplace(start.id, start.pathCost + start.heuristicCost);
 
         size_t currentID = 0;
         while (!open.empty()) {
             // get node with lowest path cost + heuristic cost
-            currentID = *open.begin();
-            open.erase(open.begin());
+            currentID = open.top().first;
+            if (currentID == toID) { break; }
 
-            if (currentID == toIndex) { break; }
+            open.pop();
+
+            if (opened[currentID]) { continue; }
+            opened[currentID] = true;
 
             visited[currentID] = true;
-
-            const Node<T> &current = this->nodes[currentID];
 
             // iterate over all edges
             for (const auto &[nextID, edgeLength] : graph[currentID]) {
                 // skip a node at this edge if it was visited before
                 if (visited[nextID]) { continue; }
 
-                const double newCost = current.pathCost + edgeLength;
-
-                Node<T> &next = this->nodes[nextID];
-                if (newCost < next.pathCost) {
+                const double newCost = this->nodes[currentID].pathCost + edgeLength;
+                double &nextPathCost = this->nodes[nextID].pathCost;
+                if (newCost < nextPathCost) {
+                    nextPathCost = newCost;
+                    open.emplace(nextID, nextPathCost + this->nodes[nextID].heuristicCost);
                     parents[nextID] = currentID;
-                    open.erase(nextID);
-                    next.pathCost = current.pathCost + edgeLength;
-                    open.insert(nextID);
                 }
             }
         }
 
-        if (currentID != toIndex) {
-            return std::nullopt;
+        if (currentID != toID) {
+            return -1.0f;
         }
 
         double length = 0;
@@ -156,7 +140,7 @@ int main() {
     for (uint32_t i = 0; i < nodeCount; ++i) {
         double x, y;
         std::cin >> x >> y;
-        nodes.emplace_back(x, y);
+        nodes.emplace_back(i, x, y);
     }
 
     for (uint32_t i = 0; i < edgeCount; ++i) {
@@ -180,11 +164,6 @@ int main() {
         std::cin >> from >> to;
         from--; to--;
 
-        std::optional<double> result = astar.shortestPath(from, to);
-        if (result.has_value()) {
-            std::cout << std::fixed << std::setprecision(6) << *result << '\n';
-        } else {
-            std::cout << -1.0 << '\n';
-        }
+        std::cout << std::fixed << std::setprecision(6) << astar.shortestPath(from, to) << '\n';
     }
 }
